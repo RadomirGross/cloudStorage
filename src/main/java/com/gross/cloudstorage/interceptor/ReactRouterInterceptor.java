@@ -12,13 +12,13 @@ import java.util.List;
 @Component
 public class ReactRouterInterceptor implements HandlerInterceptor {
     private static final List<String> EXCLUDED_PATHS =
-            List.of("/assets", "/api", "/static", "/favicon.ico", "/config.js","/login"
-            ,"/help");
+            List.of( "/api", "/static", "/favicon.ico", "/config.js"
+            );
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,Object handler) throws ServletException, IOException {
         String path = request.getRequestURI();
-
+        System.out.println("Работает интерсептор"+path);
         boolean isExcluded = EXCLUDED_PATHS.stream().anyMatch(path::startsWith);
         boolean hasExtension = path.contains(".");
 

@@ -7,13 +7,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -32,6 +38,7 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
     }
+
     @Operation(summary = "Регистрация нового пользователя")
     @PostMapping("/sign-up")
     public ResponseEntity<?> getUser(@RequestBody AuthRequest request,
@@ -44,34 +51,46 @@ public class AuthController {
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userService.register(user);
-        return authenticateAndReturn(request);
+        return authenticateAndReturn(request,httpRequest);
     }
 
     @Operation(summary = "Авторизация")
     @PostMapping("/sign-in")
-    public ResponseEntity<?> signIn(@RequestBody AuthRequest request)
-    {
-        return authenticateAndReturn(request);
+    public ResponseEntity<?> signIn(@RequestBody AuthRequest request, HttpServletRequest httpRequest) {
+        return authenticateAndReturn(request,httpRequest);
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request){
+        /*@PostMapping("/logout")
+        public ResponseEntity<Void> logout(HttpServletRequest request){
+            try {
+                request.logout();
+                return ResponseEntity.noContent().build();
+            } catch (ServletException e) {
+                throw new RuntimeException("Logout failed", e);
+            }
+        }*/
+
+    private ResponseEntity<?> authenticateAndReturn(AuthRequest request, HttpServletRequest httpRequest) {
         try {
-            request.logout();
-            return ResponseEntity.noContent().build();
-        } catch (ServletException e) {
-            throw new RuntimeException("Logout failed", e);
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
+            Authentication authentication = authenticationManager.authenticate(authToken);
+
+            // Устанавливаем аутентификацию в SecurityContext
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
+
+            // Сохраняем в сессии используя SecurityContextRepository
+            SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
+            securityContextRepository.saveContext(context, httpRequest, null);
+
+            System.out.println("✅ Пользователь авторизован: " + authentication.getName());
+
+            return ResponseEntity.ok(Map.of("username", authentication.getName()));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
         }
-    }
-
-    private ResponseEntity<?> authenticateAndReturn(AuthRequest request) {
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
-        Authentication authentication = authenticationManager.authenticate(authToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        return ResponseEntity.ok(Map.of("username", request.getUsername()));
-    }
 
 
-}
+}}
