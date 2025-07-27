@@ -51,24 +51,30 @@ public class AuthController {
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userService.register(user);
-        return authenticateAndReturn(request,httpRequest);
+        return authenticateAndReturn(request, httpRequest);
     }
 
     @Operation(summary = "Авторизация")
     @PostMapping("/sign-in")
     public ResponseEntity<?> signIn(@RequestBody AuthRequest request, HttpServletRequest httpRequest) {
-        return authenticateAndReturn(request,httpRequest);
+        return authenticateAndReturn(request, httpRequest);
     }
 
-        /*@PostMapping("/logout")
-        public ResponseEntity<Void> logout(HttpServletRequest request){
-            try {
-                request.logout();
-                return ResponseEntity.noContent().build();
-            } catch (ServletException e) {
-                throw new RuntimeException("Logout failed", e);
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null || !authentication.isAuthenticated() || !
+                    (authentication instanceof AnonymousAuthenticationToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-        }*/
+            request.logout();
+            return ResponseEntity.noContent().build();
+        } catch (ServletException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     private ResponseEntity<?> authenticateAndReturn(AuthRequest request, HttpServletRequest httpRequest) {
         try {
@@ -76,12 +82,10 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
             Authentication authentication = authenticationManager.authenticate(authToken);
 
-            // Устанавливаем аутентификацию в SecurityContext
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
 
-            // Сохраняем в сессии используя SecurityContextRepository
             SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
             securityContextRepository.saveContext(context, httpRequest, null);
 
@@ -91,6 +95,5 @@ public class AuthController {
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
         }
-
-
-}}
+    }
+}
