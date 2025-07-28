@@ -1,23 +1,17 @@
 package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.dto.AuthRequestDto;
-import com.gross.cloudstorage.model.User;
-import com.gross.cloudstorage.service.UserService;
+import com.gross.cloudstorage.exception.LogoutException;
+import com.gross.cloudstorage.exception.UserAlreadyExistsException;
+import com.gross.cloudstorage.exception.UserIsNotAuthenticatedException;
+import com.gross.cloudstorage.exception.UserValidationException;
+import com.gross.cloudstorage.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -27,72 +21,59 @@ import java.util.Map;
 @Tag(name = "Аутентификация", description = "Методы регистрации и логина")
 public class AuthController {
 
-    private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final SecurityContextRepository securityContextRepository;
+    private final AuthService authService;
 
-    public AuthController(UserService userService, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, SecurityContextRepository securityContextRepository) {
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.securityContextRepository = securityContextRepository;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @Operation(summary = "Регистрация нового пользователя")
     @PostMapping("/sign-up")
-    public ResponseEntity<?> getUser(@RequestBody AuthRequestDto authRequestDto,
+    public ResponseEntity<?> signUp(@RequestBody AuthRequestDto authRequestDto,
                                      HttpServletRequest httpRequest) {
-        if (userService.exists(authRequestDto.getUsername())) {
+        try {
+            String username = authService.register(authRequestDto, httpRequest);
+            return ResponseEntity.ok(Map.of("username", username));
+        } catch (UserAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message",
-                    "Username " + authRequestDto.getUsername() + " is already exists"));
+                    "Пользователь с таким именем уже существует"));
+        } catch (UserValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message",
+                    "Ошибка при аутентификации"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Неизвестная ошибка"));
         }
-        User user = new User();
-        user.setUsername(authRequestDto.getUsername());
-        user.setPassword(passwordEncoder.encode(authRequestDto.getPassword()));
-        userService.register(user);
-        return authenticateAndReturn(authRequestDto, httpRequest);
     }
 
     @Operation(summary = "Авторизация")
     @PostMapping("/sign-in")
     public ResponseEntity<?> signIn(@RequestBody AuthRequestDto authRequestDto, HttpServletRequest httpRequest) {
-        return authenticateAndReturn(authRequestDto, httpRequest);
+        try {
+            String username = authService.authenticate(authRequestDto, httpRequest);
+            return ResponseEntity.ok(Map.of("username", username));
+        } catch (UserValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Неверный логин или пароль"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Неизвестная ошибка"));
+        }
+
     }
 
     @PostMapping("/sign-out")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
+    public ResponseEntity<?> signOut(HttpServletRequest request) {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (authentication == null || !authentication.isAuthenticated() ||
-                    authentication instanceof AnonymousAuthenticationToken) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-            request.logout();
+            authService.logout(request);
             return ResponseEntity.noContent().build();
-        } catch (ServletException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (UserIsNotAuthenticatedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+        } catch (LogoutException e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
         }
     }
 
-    private ResponseEntity<?> authenticateAndReturn(AuthRequestDto request, HttpServletRequest httpRequest) {
-            try {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
-                Authentication authentication = authenticationManager.authenticate(authToken);
 
-                SecurityContext context = SecurityContextHolder.createEmptyContext();
-                context.setAuthentication(authentication);
-                SecurityContextHolder.setContext(context);
-
-                securityContextRepository.saveContext(context, httpRequest, null);
-
-                System.out.println("✅ Пользователь авторизован: " + authentication.getName());
-
-                return ResponseEntity.ok(Map.of("username", authentication.getName()));
-            } catch (AuthenticationException e) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
-            }
-        }
 }

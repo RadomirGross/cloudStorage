@@ -10,22 +10,29 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
-public class ReactRouterInterceptor implements HandlerInterceptor {
-    private static final List<String> EXCLUDED_PATHS =
-            List.of( "/api", "/static", "/favicon.ico", "/config.js"
-            );
+    public class ReactRouterInterceptor implements HandlerInterceptor {
+        private static final List<String> EXCLUDED_PATHS =
+                List.of(
+                        "/api",
+                        "/static",
+                        "/favicon.ico",
+                        "/config.js",
+                        "/v3/api-docs",
+                        "/swagger-ui",
+                        "/swagger-resources"
+                );
 
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response,Object handler) throws ServletException, IOException {
-        String path = request.getRequestURI();
-        System.out.println("Работает интерсептор"+path);
-        boolean isExcluded = EXCLUDED_PATHS.stream().anyMatch(path::startsWith);
-        boolean hasExtension = path.contains(".");
+        @Override
+        public boolean preHandle(HttpServletRequest request, HttpServletResponse response,Object handler) throws ServletException, IOException {
+            String path = request.getRequestURI();
+            System.out.println("Работает интерсептор"+path);
+            boolean isExcluded = EXCLUDED_PATHS.stream().anyMatch(path::startsWith);
+            boolean hasExtension = path.contains(".");
 
-        if (!isExcluded && !hasExtension) {
-            request.getRequestDispatcher("/index.html").forward(request, response);
-            return false;
+            if (!isExcluded && !hasExtension) {
+                request.getRequestDispatcher("/index.html").forward(request, response);
+                return false;
+            }
+            return true;
         }
-        return true;
     }
-}
