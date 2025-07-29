@@ -1,6 +1,7 @@
 package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.security.CustomUserDetails;
+import com.gross.cloudstorage.service.AuthService;
 import jakarta.servlet.ServletException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,29 +17,29 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
+    private final AuthService authService;
+
+    public UserController(AuthService authService, AuthService authService1) {
+        this.authService = authService1;
+    }
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         try {
             System.out.println("/me endpoint");
-            if (authentication == null || !authentication.isAuthenticated() ||
-                    authentication instanceof AnonymousAuthenticationToken) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
+           if(!authService.isAuthenticatedUser(authentication)) {
+               return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+           }
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             System.out.println("principal " + userDetails.getUsername());
 
-            Map<String, Object> response = Map.of(
-                    "username", userDetails.getUsername()
-            );
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok().body(Map.of("username", userDetails.getUsername()));
         } catch (ClassCastException e) {
-            System.err.println("Principal is not CustomUserDetails: " + e.getMessage());
+            System.out.println("Principal is not CustomUserDetails: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
+            System.out.println("Unexpected error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
