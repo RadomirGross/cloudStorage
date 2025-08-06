@@ -49,7 +49,7 @@ public class AuthService {
         userService.register(user);
 
         try {
-            minioService.createFolder("user-"+user.getId()+"-files/");
+            minioService.createFolder(user.getId(),"");
         } catch (MinioServiceException e) {
             userService.deleteUser(user);
             throw e;

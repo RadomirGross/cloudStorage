@@ -1,5 +1,6 @@
 package com.gross.cloudstorage.security;
 
+import lombok.Getter;
 import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,12 +14,15 @@ import java.util.Objects;
 public class CustomUserDetails implements UserDetails, Serializable {
     private static final long serialVersionUID = 1L;
 
+    @Getter
+    private final Long id;
     private final String username;
     private final String password;
 
-    public CustomUserDetails(String username, String password) {
+    public CustomUserDetails(Long id, String username, String password) {
         this.username = username;
         this.password = password;
+        this.id = id;
     }
 
     @Override
@@ -35,6 +39,8 @@ public class CustomUserDetails implements UserDetails, Serializable {
     public String getUsername() {
         return this.username;
     }
+
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -54,6 +60,7 @@ public class CustomUserDetails implements UserDetails, Serializable {
     public boolean isEnabled() {
         return true;
     }
+
     @Override
     public final boolean equals(Object o) {
         if (!(o instanceof CustomUserDetails that)) return false;

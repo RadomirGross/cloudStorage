@@ -26,6 +26,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (user.isEmpty()) {
             throw new UsernameNotFoundException("Пользователь с таким именем не найден");
         }
-        return new CustomUserDetails(user.get().getUsername(), user.get().getPassword());
+        return new CustomUserDetails(user.get().getId(),user.get().getUsername(), user.get().getPassword());
     }
 }
