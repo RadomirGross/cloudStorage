@@ -1,6 +1,7 @@
 package com.gross.cloudstorage.minio;
 
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,36 @@ public class MinioClientHelper {
 
     }
 
+    public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        try {
+            StatObjectResponse statObjectResponse = minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(folderPath)
+                            .build()
+            );
+            return statObjectResponse.size() == 0;
+        } catch (ErrorResponseException e) {
+            return false;
+        }
+    }
+
+    public boolean fileExists(String bucketName, String folderPath) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        try {
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(folderPath)
+                            .build()
+            );
+            return true;
+        } catch (ErrorResponseException e) {
+            return false;
+        }
+    }
+
     public boolean createBucket(String bucketName) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
@@ -42,13 +73,13 @@ public class MinioClientHelper {
         } else return false;
     }
 
-    public void createFolder(String bucketName,String folderName) throws IOException, MinioException,
+    public void createFolder(String bucketName, String fullPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
-                        .object(folderName)
+                        .object(fullPath)
                         .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
                         .contentType("application/octet-stream")
                         .build()
@@ -66,25 +97,34 @@ public class MinioClientHelper {
                             .object(objectToDelete)
                             .build()
             );
-
         }
     }
 
-    public Iterable<Result<Item>> getFolder(String bucketName,String folderName)  {
-      return  getListObjects(bucketName, folderName, false);
-    }
+    public void deleteFile(String bucketName, String objectToDelete) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
 
-    public Iterable<Result<Item>> getListObjects(String bucketName,String folderName,boolean recursive)  {
-        return minioClient.listObjects(
-                ListObjectsArgs.builder()
+        minioClient.removeObject(
+                RemoveObjectArgs.builder()
                         .bucket(bucketName)
-                        .prefix(folderName)
-                        .recursive(recursive)
+                        .object(objectToDelete)
                         .build()
         );
     }
 
 
+    public Iterable<Result<Item>> getFolder(String bucketName, String path) {
+        return getListObjects(bucketName, path, false);
+    }
+
+    public Iterable<Result<Item>> getListObjects(String bucketName, String path, boolean recursive) {
+        return minioClient.listObjects(
+                ListObjectsArgs.builder()
+                        .bucket(bucketName)
+                        .prefix(path)
+                        .recursive(recursive)
+                        .build()
+        );
+    }
 
 
 }

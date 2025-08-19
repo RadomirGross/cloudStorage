@@ -26,7 +26,6 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         try {
-            System.out.println("/me endpoint");
            if(!authService.isAuthenticatedUser(authentication)) {
                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
            }

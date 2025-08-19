@@ -1,5 +1,6 @@
 package com.gross.cloudstorage.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,8 +11,11 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class MinioObjectResponseDto {
+    private final String objectName;
     private final String path;
     private final String name;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final Long  size;
     private final ObjectType type;
 

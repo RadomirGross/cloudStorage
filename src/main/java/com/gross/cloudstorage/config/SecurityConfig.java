@@ -1,6 +1,7 @@
 package com.gross.cloudstorage.config;
 
 import com.gross.cloudstorage.service.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,7 +46,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/webjars/**" ,
-                                "/registration"
+                                "/registration",
+                                "/files/**"
+
 
                         ).permitAll()
                         .anyRequest().authenticated()
@@ -54,6 +57,12 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                 )
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint((request, response,
+                                                            authException) ->
+                        {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"message\":\"Пользователь не авторизирован\"}");}))
                 .build();
     }
 

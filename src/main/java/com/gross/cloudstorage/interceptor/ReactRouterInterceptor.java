@@ -20,6 +20,7 @@ import java.util.List;
                         "/v3/api-docs",
                         "/swagger-ui",
                         "/swagger-resources"
+
                 );
 
         @Override
