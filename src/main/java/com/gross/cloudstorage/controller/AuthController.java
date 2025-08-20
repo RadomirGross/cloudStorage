@@ -1,10 +1,7 @@
 package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.dto.AuthRequestDto;
-import com.gross.cloudstorage.exception.LogoutException;
-import com.gross.cloudstorage.exception.UserAlreadyExistsException;
-import com.gross.cloudstorage.exception.UserIsNotAuthenticatedException;
-import com.gross.cloudstorage.exception.UserValidationException;
+import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,8 +39,8 @@ public class AuthController {
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message",
                     "Ошибка при аутентификации"));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", "Неизвестная ошибка"));
+        } catch (MinioServiceException e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
         }
     }
 

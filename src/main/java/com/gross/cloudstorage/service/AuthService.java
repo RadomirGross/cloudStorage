@@ -19,7 +19,6 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 
 @Service
 public class AuthService {
@@ -49,7 +48,7 @@ public class AuthService {
         userService.register(user);
 
         try {
-            minioService.createFolder(user.getId(),"");
+            minioService.createFolder(user.getId(),"",true);
         } catch (MinioServiceException e) {
             userService.deleteUser(user);
             throw e;

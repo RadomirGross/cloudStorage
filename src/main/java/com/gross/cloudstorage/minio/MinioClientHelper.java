@@ -86,10 +86,10 @@ public class MinioClientHelper {
         );
     }
 
-    public void deleteFolder(String folderName, String bucketName) throws IOException, MinioException,
+    public void deleteFolder( String bucketName,String path) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
-        for (Result<Item> result : getListObjects(bucketName, folderName, true)) {
+        for (Result<Item> result : getListObjects(bucketName, path, true)) {
             String objectToDelete = result.get().objectName();
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
