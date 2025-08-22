@@ -55,23 +55,6 @@ public class MinioService {
         }
     }
 
-    public MinioObjectResponseDto createFolder(long userId, String path, boolean isRootFolder) {
-        String fullPath = PathUtils.addUserPrefix(userId, path);
-        System.out.println("createFolder fullPath: " + fullPath);
-        System.out.println("split" + fullPath.split("/").length);
-        try {
-            if (fullPath.split("/").length <= 1 && !isRootFolder) {
-                throw new PathValidationException("Недопустимый путь для новой директории");
-            }
-            PathUtils.validatePath(fullPath, true);
-            validateParentFoldersExist(fullPath);
-            minioClientHelper.createFolder(bucketName, fullPath);
-            return MinioMapper.toDtoMinioObjectJustForDirectory(fullPath, userId);
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
-            logger.error("Ошибка при создании папки {}:", path, e);
-            throw new MinioServiceException("ошибка при создании папки " + path + e.getMessage());
-        }
-    }
 
     public boolean directoryExists(String path) {
         try {
@@ -91,7 +74,8 @@ public class MinioService {
         }
     }
 
-    public void validateParentFoldersExist(String path) {
+    public void validateParentFoldersExist(String path, boolean createNonExistentFolders)
+    {
         String[] parts = path.split("/");
         String name = parts[parts.length - 1];
         StringBuilder pathForValidation = new StringBuilder();
@@ -100,15 +84,33 @@ public class MinioService {
         for (int i = 1; i < parts.length - 1; i++) {
             pathForValidation.append(parts[i]).append("/");
             if (!directoryExists(pathForValidation.toString())) {
-                throw new MissingParentFolderException("Не существует родительская директория");
+                if (createNonExistentFolders) {
+                    try {minioClientHelper.createFolder(bucketName, pathForValidation.toString());}
+                    catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+                        throw new MinioServiceException("ошибка при создании папки " + path + e.getMessage());}
+                } else throw new MissingParentFolderException("Не существует родительская директория");
             }
         }
+            if (directoryExists(pathForValidation.append(name).append("/").toString())) {
+                throw new DirectoryAlreadyExistsException("Директория по этому пути уже существует");
+            }
 
-        if (directoryExists(pathForValidation.append(name).append("/").toString())) {
-            throw new DirectoryAlreadyExistsException("Директория по этому пути уже существует");
+    }
+    public MinioObjectResponseDto createFolder(long userId, String path, boolean isRootFolder) {
+        String fullPath = PathUtils.addUserPrefix(userId, path);
+        try {
+            if (fullPath.split("/").length <= 1 && !isRootFolder) {
+                throw new PathValidationException("Недопустимый путь для новой директории");
+            }
+            PathUtils.validatePath(fullPath, true);
+            validateParentFoldersExist(fullPath, false);
+            minioClientHelper.createFolder(bucketName, fullPath);
+            return MinioMapper.toDtoMinioObjectJustForDirectory(fullPath, userId);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при создании папки {}:", path, e);
+            throw new MinioServiceException("ошибка при создании папки " + path + e.getMessage());
         }
     }
-
     public List<MinioObjectResponseDto> getFolder(String path, long userId) {
         Iterable<Result<Item>> folder = minioClientHelper.getFolder(bucketName, path);
         List<Item> filtered = findAndDeleteDirectoryEmptyFile(folder, path);
@@ -178,18 +180,31 @@ public class MinioService {
         }
     }
 
-    public void uploadResource(long userId, String path, MultipartFile object) {
+    public MinioObjectResponseDto uploadResource(long userId, String path, MultipartFile object) {
         try {
             String fullPath = PathUtils.addUserPrefix(userId, path);
             PathUtils.validatePath(fullPath, true);
-            System.out.println("uploading !!!" + fullPath+object.getOriginalFilename());
             if (!minioClientHelper.fileExists(bucketName, fullPath + object.getOriginalFilename())) {
                 minioClientHelper.uploadFile(bucketName, fullPath, object);
+                System.out.println("uploadResource!!! "+fullPath+ object.getOriginalFilename());
+                validateParentFoldersExist(fullPath+ object.getOriginalFilename(),true);
+                return MinioMapper.toDtoMinioObject(fullPath + object.getOriginalFilename(), object.getSize(), userId);
             } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при загрузке ресурса на сервер ", e);
             throw new MinioServiceException("Ошибка при загрузке ресурса на сервер");
         }
     }
+
+    public List<MinioObjectResponseDto> uploadResources(long userId, String path,
+                                                        List<MultipartFile> objects) {
+        List<MinioObjectResponseDto> uploaded = new ArrayList<>();
+        for (MultipartFile object : objects) {
+            uploaded.add(uploadResource(userId, path, object));
+        }
+        return uploaded;
+    }
+
+
 }
 

@@ -15,9 +15,13 @@ import java.util.Objects;
 public class MinioMapper {
 
 
-    public static MinioObjectResponseDto toDtoMinioObject(Item item, long userId) {
+    public static MinioObjectResponseDto  toDtoMinioObject(Item item, long userId) {
         String objectName = item.objectName();
         return createDto(userId, objectName, item.size());
+    }
+
+    public static MinioObjectResponseDto  toDtoMinioObject(String objectName,Long size, long userId) {
+        return createDto(userId, objectName, size);
     }
 
 

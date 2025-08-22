@@ -1,5 +1,6 @@
 package com.gross.cloudstorage.controller;
 
+import com.gross.cloudstorage.dto.MinioObjectResponseDto;
 import com.gross.cloudstorage.exception.MinioServiceException;
 import com.gross.cloudstorage.exception.ResourceAlreadyExistsException;
 import com.gross.cloudstorage.exception.ResourceNotFoundException;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.FileAlreadyExistsException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -45,15 +48,13 @@ public class ResourceController {
 
     @PostMapping
     public ResponseEntity<?> uploadResource(@RequestParam(required = false) String path,
-                                            @RequestParam("object")MultipartFile object,
+                                            @RequestParam("object") List<MultipartFile> objects,
                                                     Authentication authentication)
     {
-        System.out.println("uploadResource!!!!!   "+object.toString());
-        System.out.println("Path!!!!! "+ path);
+
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try{
-            minioService.uploadResource(userDetails.getId(), path, object);
-            return ResponseEntity.status(HttpStatus.CREATED).build();
+            return ResponseEntity.status(HttpStatus.CREATED).body(minioService.uploadResources(userDetails.getId(), path, objects));
         } catch (ResourceAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         } catch (ResourcePathValidationException e) {
