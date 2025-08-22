@@ -40,7 +40,7 @@ public class MinioService {
     }
 
     public List<MinioObjectResponseDto> getUserFolder(long userId, String path) {
-        return getFolder(PathUtils.addUserPrefix(userId, path),userId);
+        return getFolder(PathUtils.addUserPrefix(userId, path), userId);
     }
 
     public void createBucket(String bucketName) {
@@ -60,12 +60,12 @@ public class MinioService {
         System.out.println("split" + fullPath.split("/").length);
         try {
             if (fullPath.split("/").length <= 1 && !isRootFolder) {
-                throw new DirectoryPathValidationException("Недопустимый путь для новой директории");
+                throw new PathValidationException("Недопустимый путь для новой директории");
             }
-            PathUtils.validateDirectoryPath(fullPath);
+            PathUtils.validatePath(fullPath,true);
             validateParentFoldersExist(fullPath);
             minioClientHelper.createFolder(bucketName, fullPath);
-            return MinioMapper.toDtoMinioObjectJustForDirectory(fullPath,userId);
+            return MinioMapper.toDtoMinioObjectJustForDirectory(fullPath, userId);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при создании папки {}:", path, e);
             throw new MinioServiceException("ошибка при создании папки " + path + e.getMessage());
@@ -108,11 +108,11 @@ public class MinioService {
         }
     }
 
-    public List<MinioObjectResponseDto> getFolder(String path,long userId) {
+    public List<MinioObjectResponseDto> getFolder(String path, long userId) {
         Iterable<Result<Item>> folder = minioClientHelper.getFolder(bucketName, path);
         List<Item> filtered = findAndDeleteDirectoryEmptyFile(folder, path);
 
-        return MinioMapper.toListDtoMinioObject(filtered,userId);
+        return MinioMapper.toListDtoMinioObject(filtered, userId);
 
     }
 
@@ -141,8 +141,6 @@ public class MinioService {
 
     public void deleteResource(long userId, String path) {
         String fullPath = PathUtils.addUserPrefix(userId, path);
-        System.out.println("fullPath " + fullPath);
-        System.out.println("path " + path);
         boolean isDirectory = path.endsWith("/");
         PathUtils.validatePathToDeleteResource(fullPath);
         try {
@@ -159,6 +157,25 @@ public class MinioService {
             logger.error("Ошибка при удалении ресурса {}:", path, e);
             throw new MinioServiceException("Ошибка при удалении ресурса");
         }
+    }
+
+    public MinioObjectResponseDto getResourceInformation(long userId, String path) {
+        boolean isDirectory = path.endsWith("/");
+        PathUtils.validatePath(path,isDirectory);
+        if (isDirectory) {
+            if (!directoryExists(path)) {
+                throw new ResourceNotFoundException("Ресурс не найден");
+            }
+        } else if (!fileExists(path)) {
+            throw new ResourceNotFoundException("Ресурс не найден");
+        }
+        try {
+            return MinioMapper.toDtoMinioObjectFromStat(minioClientHelper.getStatObjectResponse(bucketName, path), userId);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при получении информации о ресурсе {}:", path, e);
+            throw new MinioServiceException("Ошибка при получении информации о ресурсе");
+        }
+
     }
 }
 

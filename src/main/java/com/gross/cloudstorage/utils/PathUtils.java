@@ -1,17 +1,17 @@
 package com.gross.cloudstorage.utils;
 
-import com.gross.cloudstorage.exception.DirectoryPathValidationException;
+import com.gross.cloudstorage.exception.PathValidationException;
 import com.gross.cloudstorage.exception.UserPrefixException;
 
 public class PathUtils {
 
     public static String addUserPrefix(long userId, String path) {
-        if(!path.startsWith("user-" + userId + "-files/" + path))
-        {return "user-" + userId + "-files/" + path;}
-        else throw new UserPrefixException("Префикс пользователя уже существует");
+        if (!path.startsWith("user-" + userId + "-files/" + path)) {
+            return "user-" + userId + "-files/" + path;
+        } else throw new UserPrefixException("Префикс пользователя уже существует");
     }
 
-    public static String stripUserPrefix(String path,long userId) {
+    public static String stripUserPrefix(String path, long userId) {
         String prefix = "user-" + userId + "-files/";
         if (path.startsWith(prefix)) {
             return path.substring(prefix.length());
@@ -19,25 +19,40 @@ public class PathUtils {
         throw new UserPrefixException("Ошибка при удалении префикса");
     }
 
-    public static void validateDirectoryPath(String path) {
+    public static void validatePath(String path, boolean isDirectory) {
         if (path == null || path.isEmpty()) {
-            throw new DirectoryPathValidationException("Путь директории не может быть пустым");
+            throw new PathValidationException("Путь директории не может быть пустым");
         }
         if (path.contains("..") || path.contains("//")) {
-            throw new DirectoryPathValidationException("Недопустимые символы в пути");
+            throw new PathValidationException("Недопустимые символы в пути");
         }
-        if (!path.endsWith("/")) {
-            throw new DirectoryPathValidationException("Путь директории должен заканчиваться на /");
+        if (!path.endsWith("/") && isDirectory) {
+            throw new PathValidationException("Путь директории должен заканчиваться на /");
         }
     }
 
     public static void validatePathToDeleteResource(String path) {
         if (path == null || path.isEmpty()) {
-            throw new DirectoryPathValidationException("Путь к ресурсу не может быть пустым");
+            throw new PathValidationException("Путь к ресурсу не может быть пустым");
         }
         if (path.contains("..") || path.contains("//")) {
-            throw new DirectoryPathValidationException("Недопустимые символы в пути");
+            throw new PathValidationException("Недопустимые символы в пути");
         }
+    }
+
+    public static String extractName(String path) {
+        String[] parts = path.split("/");
+        boolean isRootDirectory = parts.length==1;
+        if(isRootDirectory) return "";
+
+        if (path.endsWith("/")) {
+            return parts[parts.length - 1] + "/";
+        } else return parts[parts.length - 1];
+    }
+
+    public static String extractPath(String path) {
+        String name = extractName(path);
+        return path.substring(0, path.length() - name.length());
     }
 }
 

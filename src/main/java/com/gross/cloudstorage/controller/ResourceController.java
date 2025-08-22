@@ -10,10 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -26,20 +23,37 @@ public class ResourceController {
     public ResourceController(MinioService minioService) {
         this.minioService = minioService;
     }
+
+    @Operation(summary = "Получить информацию о ресурсе")
+    @GetMapping
+    public ResponseEntity<?> getResource(@RequestParam(required = false) String path,
+                                         Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        try {
+            return ResponseEntity.ok(minioService.getResourceInformation(userDetails.getId(), path));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        } catch (ResourcePathValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }catch (MinioServiceException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+
     @Operation(summary = "Удалить ресурс")
     @DeleteMapping
     public ResponseEntity<?> deleteResource(@RequestParam(required = false) String path,
                                             Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            System.out.println("ResourceController "+path);
             minioService.deleteResource(userDetails.getId(), path);
             return ResponseEntity.noContent().build();
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
-        }catch (ResourcePathValidationException e) {
+        } catch (ResourcePathValidationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-        }catch (MinioServiceException e) {
+        } catch (MinioServiceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }

@@ -31,32 +31,28 @@ public class MinioClientHelper {
 
     public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
-        try {
-            StatObjectResponse statObjectResponse = minioClient.statObject(
+        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
+        return statObjectResponse != null && statObjectResponse.size() == 0;
+
+    }
+
+    public StatObjectResponse getStatObjectResponse(String bucketName, String path)
+            throws IOException, MinioException, NoSuchAlgorithmException, InvalidKeyException {
+        try{
+            return minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucketName)
-                            .object(folderPath)
+                            .object(path)
                             .build()
             );
-            return statObjectResponse.size() == 0;
-        } catch (ErrorResponseException e) {
-            return false;
+        }catch(ErrorResponseException e){
+            return null;
         }
     }
 
     public boolean fileExists(String bucketName, String folderPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
-        try {
-            minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(folderPath)
-                            .build()
-            );
-            return true;
-        } catch (ErrorResponseException e) {
-            return false;
-        }
+        return getStatObjectResponse(bucketName, folderPath) != null;
     }
 
     public boolean createBucket(String bucketName) throws IOException, MinioException,

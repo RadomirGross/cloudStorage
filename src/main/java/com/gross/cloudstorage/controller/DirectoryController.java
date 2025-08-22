@@ -2,12 +2,11 @@ package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.dto.MinioObjectResponseDto;
 import com.gross.cloudstorage.exception.DirectoryAlreadyExistsException;
-import com.gross.cloudstorage.exception.DirectoryPathValidationException;
+import com.gross.cloudstorage.exception.PathValidationException;
 import com.gross.cloudstorage.exception.MinioServiceException;
 import com.gross.cloudstorage.exception.MissingParentFolderException;
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.MinioService;
-import io.minio.errors.MinioException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -49,7 +48,7 @@ public class DirectoryController {
             return ResponseEntity.status(HttpStatus.CREATED).body(minioService.createFolder(userDetails.getId(), path,false));
         } catch (MissingParentFolderException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
-        } catch (DirectoryPathValidationException e) {
+        } catch (PathValidationException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (DirectoryAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));

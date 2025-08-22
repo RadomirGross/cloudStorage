@@ -37,7 +37,6 @@ public class AuthService {
         this.minioService = minioService;
     }
 
-    @Transactional
     public String register(AuthRequestDto authRequestDto, HttpServletRequest httpRequest) {
         if (userService.exists(authRequestDto.getUsername())) {
             throw new UserAlreadyExistsException("User " + authRequestDto.getUsername() + " already exists");

@@ -11,7 +11,6 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class MinioObjectResponseDto {
-    private final String objectName;
     private final String path;
     private final String name;
 
