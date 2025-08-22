@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -62,7 +63,7 @@ public class MinioService {
             if (fullPath.split("/").length <= 1 && !isRootFolder) {
                 throw new PathValidationException("Недопустимый путь для новой директории");
             }
-            PathUtils.validatePath(fullPath,true);
+            PathUtils.validatePath(fullPath, true);
             validateParentFoldersExist(fullPath);
             minioClientHelper.createFolder(bucketName, fullPath);
             return MinioMapper.toDtoMinioObjectJustForDirectory(fullPath, userId);
@@ -161,7 +162,7 @@ public class MinioService {
 
     public MinioObjectResponseDto getResourceInformation(long userId, String path) {
         boolean isDirectory = path.endsWith("/");
-        PathUtils.validatePath(path,isDirectory);
+        PathUtils.validatePath(path, isDirectory);
         if (isDirectory) {
             if (!directoryExists(path)) {
                 throw new ResourceNotFoundException("Ресурс не найден");
@@ -175,7 +176,20 @@ public class MinioService {
             logger.error("Ошибка при получении информации о ресурсе {}:", path, e);
             throw new MinioServiceException("Ошибка при получении информации о ресурсе");
         }
+    }
 
+    public void uploadResource(long userId, String path, MultipartFile object) {
+        try {
+            String fullPath = PathUtils.addUserPrefix(userId, path);
+            PathUtils.validatePath(fullPath, true);
+            System.out.println("uploading !!!" + fullPath+object.getOriginalFilename());
+            if (!minioClientHelper.fileExists(bucketName, fullPath + object.getOriginalFilename())) {
+                minioClientHelper.uploadFile(bucketName, fullPath, object);
+            } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при загрузке ресурса на сервер ", e);
+            throw new MinioServiceException("Ошибка при загрузке ресурса на сервер");
+        }
     }
 }
 

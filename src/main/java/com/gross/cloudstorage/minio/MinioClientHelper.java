@@ -5,6 +5,7 @@ import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,26 +27,24 @@ public class MinioClientHelper {
                         .builder()
                         .bucket(bucketName)
                         .build());
-
     }
 
     public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
         StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
         return statObjectResponse != null && statObjectResponse.size() == 0;
-
     }
 
     public StatObjectResponse getStatObjectResponse(String bucketName, String path)
             throws IOException, MinioException, NoSuchAlgorithmException, InvalidKeyException {
-        try{
+        try {
             return minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucketName)
                             .object(path)
                             .build()
             );
-        }catch(ErrorResponseException e){
+        } catch (ErrorResponseException e) {
             return null;
         }
     }
@@ -82,7 +81,7 @@ public class MinioClientHelper {
         );
     }
 
-    public void deleteFolder( String bucketName,String path) throws IOException, MinioException,
+    public void deleteFolder(String bucketName, String path) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
         for (Result<Item> result : getListObjects(bucketName, path, true)) {
@@ -122,6 +121,17 @@ public class MinioClientHelper {
         );
     }
 
+public void uploadFile(String bucketName, String filePath, MultipartFile object) throws IOException, MinioException,
+        NoSuchAlgorithmException, InvalidKeyException {
 
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(filePath+object.getOriginalFilename())
+                        .stream(object.getInputStream(),object.getSize(),-1)
+                        .contentType(object.getContentType())
+                        .build()
+        );
+}
 }
 
