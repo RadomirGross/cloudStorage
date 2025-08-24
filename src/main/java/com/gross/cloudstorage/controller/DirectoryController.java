@@ -45,7 +45,7 @@ public class DirectoryController {
                                           Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(minioService.createFolder(userDetails.getId(), path,false));
+            return ResponseEntity.status(HttpStatus.CREATED).body(minioService.createDirectory(userDetails.getId(), path,false));
         } catch (MissingParentFolderException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         } catch (PathValidationException e) {

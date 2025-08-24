@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -130,6 +131,16 @@ public void uploadFile(String bucketName, String filePath, MultipartFile object)
                         .object(filePath+object.getOriginalFilename())
                         .stream(object.getInputStream(),object.getSize(),-1)
                         .contentType(object.getContentType())
+                        .build()
+        );
+}
+
+public InputStream getObject(String bucketName, String objectName) throws IOException, MinioException,
+        NoSuchAlgorithmException, InvalidKeyException {
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
                         .build()
         );
 }
