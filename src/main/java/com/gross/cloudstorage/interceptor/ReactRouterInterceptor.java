@@ -26,7 +26,6 @@ import java.util.List;
         @Override
         public boolean preHandle(HttpServletRequest request, HttpServletResponse response,Object handler) throws ServletException, IOException {
             String path = request.getRequestURI();
-            System.out.println("Работает интерсептор"+path);
             boolean isExcluded = EXCLUDED_PATHS.stream().anyMatch(path::startsWith);
             boolean hasExtension = path.contains(".");
 

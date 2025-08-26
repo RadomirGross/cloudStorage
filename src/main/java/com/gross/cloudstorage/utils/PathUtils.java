@@ -11,7 +11,7 @@ public class PathUtils {
         } else throw new UserPrefixException("Префикс пользователя уже существует");
     }
 
-    public static String stripUserPrefix(String path, long userId) {
+    public static String stripUserPrefix( long userId,String path) {
         String prefix = "user-" + userId + "-files/";
         if (path.startsWith(prefix)) {
             return path.substring(prefix.length());
@@ -38,6 +38,15 @@ public class PathUtils {
         if (path.contains("..") || path.contains("//")) {
             throw new PathValidationException("Недопустимые символы в пути");
         }
+    }
+
+    public static void validateSearchRequest(String query) {
+
+        if (query==null || query.trim().isEmpty()) {
+            throw new PathValidationException("Поисковой запрос не может быть пустым");
+        }
+        if (!query.matches("^[a-zA-Z0-9а-яА-Я._\\-/ ]+$"))
+        { throw new PathValidationException("Поисковой запрос содержит недопустимые символы");}
     }
 
     public static String extractName(String path) {

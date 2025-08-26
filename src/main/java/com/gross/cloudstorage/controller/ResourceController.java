@@ -1,10 +1,7 @@
 package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.dto.MinioObjectResponseDto;
-import com.gross.cloudstorage.exception.MinioServiceException;
-import com.gross.cloudstorage.exception.ResourceAlreadyExistsException;
-import com.gross.cloudstorage.exception.ResourceNotFoundException;
-import com.gross.cloudstorage.exception.ResourcePathValidationException;
+import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.MinioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,7 +38,7 @@ public class ResourceController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         } catch (ResourcePathValidationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-        }catch (MinioServiceException e) {
+        } catch (MinioServiceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
@@ -49,11 +46,10 @@ public class ResourceController {
     @PostMapping
     public ResponseEntity<?> uploadResource(@RequestParam(required = false) String path,
                                             @RequestParam("object") List<MultipartFile> objects,
-                                                    Authentication authentication)
-    {
+                                            Authentication authentication) {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        try{
+        try {
             return ResponseEntity.status(HttpStatus.CREATED).body(minioService.uploadResources(userDetails.getId(), path, objects));
         } catch (ResourceAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
@@ -79,6 +75,24 @@ public class ResourceController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (MinioServiceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/move")
+    public ResponseEntity<?> moveResource(@RequestParam(required = false) String from,
+                                          @RequestParam(required = false) String to,
+                                          Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        try {
+            return ResponseEntity.ok().body(minioService.moveResource(userDetails.getId(), from, to));
+        } catch (PathValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при перемещении."+e.getMessage()));
+        } catch (ResourceAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
+        } catch (MinioServiceException e) {
+            return ResponseEntity.internalServerError().body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
         }
     }
 }

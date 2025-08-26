@@ -66,7 +66,16 @@ public class MinioService {
             return minioClientHelper.folderExists(bucketName, path);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при проверке существования папки {}:", path, e);
-            throw new MinioServiceException("Ошибка при проверке существования папки " + path + e.getMessage());
+            throw new MinioServiceException("Ошибка при проверке существования папки ");
+        }
+    }
+
+    public boolean isResourceExists(String path) {
+        try {
+            return minioClientHelper.resourceExists(bucketName, path);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при проверке существования ресурса {}:", path, e);
+            throw new MinioServiceException("Ошибка при проверке существования ресурса ");
         }
     }
 
@@ -75,7 +84,7 @@ public class MinioService {
             return minioClientHelper.fileExists(bucketName, path);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при проверке существования файла {}:", path, e);
-            throw new MinioServiceException("Ошибка при проверке существования файла " + path + e.getMessage());
+            throw new MinioServiceException("Ошибка при проверке существования файла ");
         }
     }
 
@@ -157,7 +166,7 @@ public class MinioService {
         try {
             if (isDirectory) {
                 if (isDirectoryExists(fullPath)) {
-                    minioClientHelper.deleteFolder(bucketName, fullPath);
+                    minioClientHelper.deleteDirectory(bucketName, fullPath);
                 } else throw new ResourceNotFoundException("Нельзя удалить несуществующую директорию");
             } else {
                 if (isFileExists(fullPath)) {
@@ -175,7 +184,7 @@ public class MinioService {
         PathUtils.validatePath(path, isDirectory);
         if (isDirectory) {
             if (!isDirectoryExists(path)) {
-                throw new ResourceNotFoundException("Ресурс не найден");
+                throw new ResourceNotFoundException("Директория " + PathUtils.stripUserPrefix(userId, path) + " не найдена");
             }
         } else if (!isFileExists(path)) {
             throw new ResourceNotFoundException("Ресурс не найден");
@@ -194,7 +203,6 @@ public class MinioService {
             PathUtils.validatePath(fullPath, true);
             if (!minioClientHelper.fileExists(bucketName, fullPath + object.getOriginalFilename())) {
                 minioClientHelper.uploadFile(bucketName, fullPath, object);
-                System.out.println("uploadResource!!! " + fullPath + object.getOriginalFilename());
                 validateParentFoldersExist(fullPath + object.getOriginalFilename(), true);
                 return MinioMapper.toDtoMinioObject(fullPath + object.getOriginalFilename(), object.getSize(), userId);
             } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");
@@ -215,40 +223,35 @@ public class MinioService {
 
     public InputStream downloadResource(long userId, String path) {
         String fullPath = PathUtils.addUserPrefix(userId, path);
-        System.out.println("downloadResource!!! " + fullPath);
-        if(path.endsWith("/")) {
-            if (isDirectoryExists(fullPath))
-            {return downloadDirectory(fullPath);}
-            else throw new ResourceNotFoundException("Директории для скачивания по пути "+fullPath+" не существует");
-        }else  {
-            if (isFileExists(fullPath))
-            {return downloadFile(fullPath);}
-            else throw new ResourceNotFoundException("Файла для скачивания по пути "+fullPath+" не существует");
+        if (path.endsWith("/")) {
+            if (isDirectoryExists(fullPath)) {
+                return downloadDirectory(fullPath);
+            } else
+                throw new ResourceNotFoundException("Директории для скачивания по пути " + fullPath + " не существует");
+        } else {
+            if (isFileExists(fullPath)) {
+                return downloadFile(fullPath);
+            } else throw new ResourceNotFoundException("Файла для скачивания по пути " + fullPath + " не существует");
         }
     }
 
     public InputStream downloadFile(String path) {
-        System.out.println("downloadFile!!! " + path);
         PathUtils.validatePath(path, false);
         try {
-            return minioClientHelper.getObject(bucketName, path);}
-         catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            return minioClientHelper.getObject(bucketName, path);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при скачивании файла ", e);
             throw new MinioServiceException("Ошибка при скачивании файла");
         }
     }
 
     public InputStream downloadDirectory(String path) {
-        System.out.println("downloadDirectory!!! " + path);
         PathUtils.validatePath(path, true);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)){
-        Iterable<Result<Item>> results = minioClientHelper.getListObjects(bucketName, path, true);
-            System.out.println("ResultSize ");
-            for (Result<Item> result : results) {
-                System.out.println(result.get().objectName());
-            }
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+            Iterable<Result<Item>> results = minioClientHelper.getListObjects(bucketName, path, true);
+
             for (Result<Item> result : results) {
                 Item item = result.get();
                 if (isDirectoryEmptyFile(item, item.objectName())) {
@@ -256,12 +259,11 @@ public class MinioService {
                 }
                 String objectName = item.objectName();
 
-                try(InputStream inputStream = minioClientHelper.getObject(bucketName, objectName))
-                {
-                zipOutputStream.putNextEntry(new ZipEntry(objectName.substring(path.length())));
-                    System.out.println("downloadDirectory objectName "+objectName.substring(path.length()));
-                inputStream.transferTo(zipOutputStream);
-                zipOutputStream.closeEntry();}
+                try (InputStream inputStream = minioClientHelper.getObject(bucketName, objectName)) {
+                    zipOutputStream.putNextEntry(new ZipEntry(objectName.substring(path.length())));
+                    inputStream.transferTo(zipOutputStream);
+                    zipOutputStream.closeEntry();
+                }
             }
             zipOutputStream.finish();
             return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
@@ -271,6 +273,52 @@ public class MinioService {
         }
     }
 
+
+    public List<MinioObjectResponseDto> searchResources(long userId, String query) {
+        query = query.trim();
+        PathUtils.validateSearchRequest(query);
+        List<MinioObjectResponseDto> searched = new ArrayList<>();
+        Iterable<Result<Item>> results = minioClientHelper.getListObjects(bucketName, PathUtils.addUserPrefix(userId, ""), true);
+        try {
+            for (Result<Item> result : results) {
+                Item item = result.get();
+                if (PathUtils.extractName(item.objectName()).toLowerCase()
+                        .contains(query.toLowerCase())) {
+                    searched.add(MinioMapper.toDtoMinioObject(item, userId));
+                }
+            }
+            return searched;
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при поисковом запросе ", e);
+            throw new MinioServiceException("Ошибка при поисковом запросе");
+        }
+    }
+
+    public MinioObjectResponseDto moveResource(long userId, String from, String to) {
+        boolean isDirectory = from.endsWith("/");
+
+        String fullFrom = PathUtils.addUserPrefix(userId, from);
+        String fullTo = PathUtils.addUserPrefix(userId, to);
+
+        PathUtils.validatePath(from, isDirectory);
+        PathUtils.validatePath(to, isDirectory);
+
+        if (!isResourceExists(fullFrom)) {
+            throw new ResourceNotFoundException("Копируемый ресурс не найден");
+        }
+        if (isResourceExists(fullTo)) {
+            throw new ResourceAlreadyExistsException("Ресурс по пути " + PathUtils.stripUserPrefix(userId, fullTo) + " уже существует. Операция невозможна.");
+        }
+
+        try {
+            minioClientHelper.copyResource(bucketName, fullFrom, fullTo, isDirectory);
+            deleteResource(userId, from);
+            return getResourceInformation(userId, fullTo);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при перемещении или переименовании  ", e);
+            throw new MinioServiceException("Ошибка при перемещении или переименовании");
+        }
+    }
 
 }
 

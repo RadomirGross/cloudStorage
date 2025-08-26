@@ -27,19 +27,12 @@ public class UserController {
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         try {
            if(!authService.isAuthenticatedUser(authentication)) {
-               return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-           }
+               return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            System.out.println("principal " + userDetails.getUsername());
-
             return ResponseEntity.ok().body(Map.of("username", userDetails.getUsername()));
-        } catch (ClassCastException e) {
-            System.out.println("Principal is not CustomUserDetails: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
 }

@@ -55,6 +55,11 @@ public class MinioClientHelper {
         return getStatObjectResponse(bucketName, folderPath) != null;
     }
 
+    public boolean resourceExists(String bucketName, String folderPath) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        return getStatObjectResponse(bucketName, folderPath) != null;
+    }
+
     public boolean createBucket(String bucketName) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
@@ -82,17 +87,12 @@ public class MinioClientHelper {
         );
     }
 
-    public void deleteFolder(String bucketName, String path) throws IOException, MinioException,
+    public void deleteDirectory(String bucketName, String path) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
         for (Result<Item> result : getListObjects(bucketName, path, true)) {
             String objectToDelete = result.get().objectName();
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(objectToDelete)
-                            .build()
-            );
+            deleteFile(bucketName, objectToDelete);
         }
     }
 
@@ -106,6 +106,8 @@ public class MinioClientHelper {
                         .build()
         );
     }
+
+
 
 
     public Iterable<Result<Item>> getFolder(String bucketName, String path) {
@@ -122,27 +124,61 @@ public class MinioClientHelper {
         );
     }
 
-public void uploadFile(String bucketName, String filePath, MultipartFile object) throws IOException, MinioException,
-        NoSuchAlgorithmException, InvalidKeyException {
+    public void uploadFile(String bucketName, String filePath, MultipartFile object) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
 
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
-                        .object(filePath+object.getOriginalFilename())
-                        .stream(object.getInputStream(),object.getSize(),-1)
+                        .object(filePath + object.getOriginalFilename())
+                        .stream(object.getInputStream(), object.getSize(), -1)
                         .contentType(object.getContentType())
                         .build()
         );
-}
+    }
 
-public InputStream getObject(String bucketName, String objectName) throws IOException, MinioException,
-        NoSuchAlgorithmException, InvalidKeyException {
+    public InputStream getObject(String bucketName, String objectName) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
         return minioClient.getObject(
                 GetObjectArgs.builder()
                         .bucket(bucketName)
                         .object(objectName)
                         .build()
         );
-}
+    }
+
+    public ObjectWriteResponse copyFile(String bucketName, String from, String to) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+
+        return minioClient.copyObject(
+                CopyObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(to)
+                        .source(
+                                CopySource.builder()
+                                        .bucket(bucketName)
+                                        .object(from)
+                                        .build()
+                        )
+                        .build()
+        );
+    }
+
+    public void copyDirectory(String bucketName, String from, String to) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        for (Result<Item> listObject : getListObjects(bucketName,from,true)) {
+            String objectToCopy = listObject.get().objectName();
+            copyFile(bucketName,objectToCopy,to+objectToCopy.substring(from.length()));
+        }
+    }
+
+    public void copyResource(String bucketName, String from, String to, boolean isDirectory) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        if (isDirectory) {
+            copyDirectory(bucketName, from, to);
+        }else copyFile(bucketName, from, to);
+    }
+
+
 }
 

@@ -4,6 +4,8 @@ import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.MinioService;
 import com.gross.cloudstorage.utils.PathUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("api/resource/download")
+@Tag(name = "Скачивание ресурса")
 public class DownloadController {
     private final MinioService minioService;
 
@@ -27,6 +30,7 @@ public class DownloadController {
         this.minioService = minioService;
     }
 
+    @Operation(summary = "Скачать ресурс")
     @GetMapping
     public ResponseEntity<?> download(@RequestParam(required = false) String path,
                                       Authentication authentication) {
@@ -37,16 +41,14 @@ public class DownloadController {
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + (isDirectory ? name + ".zip" : name) + "\"");
         InputStream inputStream = minioService.downloadResource(userDetails.getId(), path);
         try {
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(new InputStreamResource(inputStream));
         } catch (PathValidationException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
         }
     }
 }

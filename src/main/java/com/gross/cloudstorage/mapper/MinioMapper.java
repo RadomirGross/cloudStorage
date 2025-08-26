@@ -38,7 +38,6 @@ public class MinioMapper {
         if (!objectName.endsWith("/")) {
             throw new MinioServiceException("Путь директории должен заканчиваться на /");
         }
-        System.out.println("toDtoMinioObjectJustForDirectory" + objectName);
         return createDto(userId, objectName, null);
     }
 
@@ -53,13 +52,11 @@ public class MinioMapper {
         boolean isDirectory = objectName.endsWith("/");
         String name = PathUtils.extractName(objectName);
         String path = PathUtils.extractPath(objectName);
-        System.out.println("createDto path: " + path);
-        System.out.println("createDto name: " + name);
         MinioObjectResponseDto.ObjectType objectType = isDirectory ?
                 MinioObjectResponseDto.ObjectType.DIRECTORY : MinioObjectResponseDto.ObjectType.FILE;
 
         return new MinioObjectResponseDto(
-                PathUtils.stripUserPrefix(path, userId),
+                PathUtils.stripUserPrefix(userId,path),
                 name,
                 isDirectory ? null : size,
                 objectType
