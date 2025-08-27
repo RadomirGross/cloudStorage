@@ -9,39 +9,38 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 
 public class MinioMapper {
 
 
-    public static MinioObjectResponseDto  toDtoMinioObject(Item item, long userId) {
+    public static MinioObjectResponseDto toDto(Item item, long userId) {
         String objectName = item.objectName();
         return createDto(userId, objectName, item.size());
     }
 
-    public static MinioObjectResponseDto  toDtoMinioObject(String objectName,Long size, long userId) {
+    public static MinioObjectResponseDto toDto(String objectName, Long size, long userId) {
         return createDto(userId, objectName, size);
     }
 
 
-    public static List<MinioObjectResponseDto> toListDtoMinioObject(List<Item> minioItems, long userId) {
+    public static List<MinioObjectResponseDto> toListDto(List<Item> minioItems, long userId) {
         List<MinioObjectResponseDto> list = new ArrayList<>();
         for (Item item : minioItems) {
-            list.add(toDtoMinioObject(item, userId));
+            list.add(toDto(item, userId));
         }
         return list;
     }
 
 
-    public static MinioObjectResponseDto toDtoMinioObjectJustForDirectory(String objectName, long userId) {
+    public static MinioObjectResponseDto toDtoJustForDirectory(String objectName, long userId) {
         if (!objectName.endsWith("/")) {
             throw new MinioServiceException("Путь директории должен заканчиваться на /");
         }
         return createDto(userId, objectName, null);
     }
 
-    public static MinioObjectResponseDto toDtoMinioObjectFromStat(StatObjectResponse statObjectResponse, long userId) {
+    public static MinioObjectResponseDto toDtoFromStat(StatObjectResponse statObjectResponse, long userId) {
         String objectName = statObjectResponse.object();
         return createDto(userId, objectName, statObjectResponse.size());
 

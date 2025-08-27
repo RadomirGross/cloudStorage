@@ -33,7 +33,7 @@ public class MinioClientHelper {
     public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
         StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
-        return statObjectResponse != null && statObjectResponse.size() == 0;
+        return statObjectResponse != null && statObjectResponse.size() == 0 && folderPath.endsWith("/");
     }
 
     public StatObjectResponse getStatObjectResponse(String bucketName, String path)

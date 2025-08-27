@@ -14,7 +14,6 @@ public WebConfig(ReactRouterInterceptor reactRouterInterceptor) {
     this.reactRouterInterceptor = reactRouterInterceptor;
 }
 
-
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(reactRouterInterceptor);

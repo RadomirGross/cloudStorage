@@ -1,6 +1,5 @@
 package com.gross.cloudstorage.controller;
 
-import com.gross.cloudstorage.dto.MinioObjectResponseDto;
 import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.MinioService;
@@ -12,8 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.FileAlreadyExistsException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +40,7 @@ public class ResourceController {
         }
     }
 
+    @Operation(summary = "Загрузить ресурс в облачное хранилище")
     @PostMapping
     public ResponseEntity<?> uploadResource(@RequestParam(required = false) String path,
                                             @RequestParam("object") List<MultipartFile> objects,
@@ -52,11 +50,11 @@ public class ResourceController {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(minioService.uploadResources(userDetails.getId(), path, objects));
         } catch (ResourceAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
         } catch (ResourcePathValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
         }
     }
 
@@ -70,14 +68,15 @@ public class ResourceController {
             minioService.deleteResource(userDetails.getId(), path);
             return ResponseEntity.noContent().build();
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
         } catch (ResourcePathValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
         }
     }
 
+    @Operation(summary = "Переместить ресурс")
     @GetMapping("/move")
     public ResponseEntity<?> moveResource(@RequestParam(required = false) String from,
                                           @RequestParam(required = false) String to,

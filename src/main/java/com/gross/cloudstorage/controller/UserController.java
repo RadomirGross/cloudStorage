@@ -2,6 +2,8 @@ package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.ServletException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
+@Tag(name = "Аутентификация", description = "Методы регистрации и логина")
 public class UserController {
     private final AuthService authService;
 
@@ -23,6 +26,7 @@ public class UserController {
         this.authService = authService1;
     }
 
+    @Operation(summary = "Получить зарегистрированного пользователя")
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         try {

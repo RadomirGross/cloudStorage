@@ -6,6 +6,9 @@ import com.gross.cloudstorage.exception.UserPrefixException;
 public class PathUtils {
 
     public static String addUserPrefix(long userId, String path) {
+        if(path==null)
+        {path="";}
+
         if (!path.startsWith("user-" + userId + "-files/" + path)) {
             return "user-" + userId + "-files/" + path;
         } else throw new UserPrefixException("Префикс пользователя уже существует");
@@ -16,13 +19,14 @@ public class PathUtils {
         if (path.startsWith(prefix)) {
             return path.substring(prefix.length());
         }
-        throw new UserPrefixException("Ошибка при удалении префикса");
+        throw new UserPrefixException("Ошибка при удалении префикса. Префикс отсутствует.");
     }
 
     public static void validatePath(String path, boolean isDirectory) {
-        if (path == null || path.isEmpty()) {
-            throw new PathValidationException("Путь директории не может быть пустым");
+        if (path == null ) {
+            throw new PathValidationException("Путь "+(isDirectory?"директории":"файла")+" не может быть пустым");
         }
+
         if (path.contains("..") || path.contains("//")) {
             throw new PathValidationException("Недопустимые символы в пути");
         }
