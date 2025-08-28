@@ -31,7 +31,7 @@ public class MinioValidationService {
         try {
             return minioClientHelper.resourceExists(bucketName, path, isDirectory);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
-            logger.error("Ошибка при проверке существования ресурса {}:", path, e);
+            logger.error("Ошибка при проверке существования ресурса {}:", path.substring(path.indexOf('/') + 1), e);
             throw new MinioServiceException("Ошибка при проверке существования ресурса ");
         }
     }

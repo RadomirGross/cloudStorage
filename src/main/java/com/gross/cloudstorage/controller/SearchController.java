@@ -2,7 +2,7 @@ package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.exception.PathValidationException;
 import com.gross.cloudstorage.security.CustomUserDetails;
-import com.gross.cloudstorage.service.MinioService;
+import com.gross.cloudstorage.service.CloudStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +18,10 @@ import java.util.Map;
 @RequestMapping("api/resource/search")
 @Tag(name = "Операции с ресурсами")
 public class SearchController {
-    private final MinioService minioService;
+    private final CloudStorageService cloudStorageService;
 
-    public SearchController(MinioService minioService) {
-        this.minioService = minioService;
+    public SearchController(CloudStorageService cloudStorageService) {
+        this.cloudStorageService = cloudStorageService;
     }
 
     @Operation(summary = "Поиск ресурса")
@@ -29,7 +29,7 @@ public class SearchController {
     public ResponseEntity<?> search(@RequestParam(required = false) String query, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            return ResponseEntity.ok().body(minioService.searchResources(userDetails.getId(), query));
+            return ResponseEntity.ok().body(cloudStorageService.searchResources(userDetails.getId(), query));
         } catch (PathValidationException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

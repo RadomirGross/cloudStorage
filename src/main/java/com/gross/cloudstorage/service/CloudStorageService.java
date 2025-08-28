@@ -32,8 +32,8 @@ public class CloudStorageService {
         return minioDirectoryService.getUserDirectory(userId, path);
     }
 
-    public MinioDto createDirectory(long userId, String path){
-        return minioDirectoryService.createDirectory(userId,path,false);
+    public MinioDto createDirectory(long userId, String path,boolean isRootDirectory){
+        return minioDirectoryService.createDirectory(userId,path,isRootDirectory);
     }
 
     public InputStream downloadResource(long userId, String path){
@@ -54,5 +54,9 @@ public class CloudStorageService {
 
     public MinioDto moveResource(long userId, String from, String to){
         return minioResourceService.moveResource(userId, from, to);
+    }
+
+    public List<MinioDto> searchResources(long userId, String query){
+        return minioResourceService.searchResources(userId, query);
     }
 }

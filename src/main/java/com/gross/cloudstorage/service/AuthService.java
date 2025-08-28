@@ -25,20 +25,22 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private  final SecurityContextRepository securityContextRepository;
-    private final MinioService minioService;
+    private final CloudStorageService cloudStorageService;
 
     public AuthService(UserService userService, PasswordEncoder passwordEncoder,
-                       AuthenticationManager authenticationManager, SecurityContextRepository securityContextRepository, MinioService minioService) {
+                       AuthenticationManager authenticationManager,
+                       SecurityContextRepository securityContextRepository,
+                       CloudStorageService cloudStorageService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
-        this.minioService = minioService;
+        this.cloudStorageService = cloudStorageService;
     }
 
     public String register(AuthRequestDto authRequestDto, HttpServletRequest httpRequest) {
         if (userService.exists(authRequestDto.getUsername())) {
-            throw new UserAlreadyExistsException("User " + authRequestDto.getUsername() + " already exists");
+            throw new UserAlreadyExistsException("Пользователь с именем " + authRequestDto.getUsername() + " уже существует. Выберите другое имя.");
         }
 
         userService.validateUser(authRequestDto.getUsername(), authRequestDto.getPassword());
@@ -46,7 +48,7 @@ public class AuthService {
         userService.register(user);
 
         try {
-            minioService.createDirectory(user.getId(),"",true);
+            cloudStorageService.createDirectory(user.getId(),"",true);
         } catch (MinioServiceException e) {
             userService.deleteUser(user);
             throw e;
@@ -73,7 +75,7 @@ public class AuthService {
     public void logout(HttpServletRequest httpRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!isAuthenticatedUser(authentication)) {
-            throw new UserIsNotAuthenticatedException("User is not authenticated");
+            throw new UserIsNotAuthenticatedException("Пользователь на аутентифицирован");
         }
 
         try {

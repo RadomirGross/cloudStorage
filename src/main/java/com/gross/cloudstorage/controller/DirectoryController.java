@@ -36,7 +36,7 @@ public class DirectoryController {
                     cloudStorageService.getUserDirectory(userDetails.getId(), path);
             return ResponseEntity.ok(objects);
         } catch (PathValidationException e) {
-            return ResponseEntity.badRequest().body(Map.of("message","Ошибка при получении содержимого. "+e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при получении содержимого. " + e.getMessage()));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при получении содержимого. " + e.getMessage()));
         } catch (MinioServiceException e) {
@@ -44,21 +44,21 @@ public class DirectoryController {
         }
     }
 
-        @Operation(summary = "Создать новую директорию")
-        @PostMapping
-        public ResponseEntity<?> createFolder (@RequestParam(required = false) String path,
-                Authentication authentication){
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            try {
-                return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.createDirectory(userDetails.getId(), path));
-            } catch (MissingParentFolderException e) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Ошибка при создании директории. "+ e.getMessage()));
-            } catch (PathValidationException e) {
-                return ResponseEntity.badRequest().body(Map.of("message","Ошибка при создании директории. "+ e.getMessage()));
-            } catch (DirectoryAlreadyExistsException e) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message","Ошибка при создании директории. "+ e.getMessage()));
-            } catch (MinioServiceException e) {
-                return ResponseEntity.internalServerError().body(Map.of("message","Ошибка при создании директории. "+ e.getMessage()));
-            }
+    @Operation(summary = "Создать новую директорию")
+    @PostMapping
+    public ResponseEntity<?> createFolder(@RequestParam(required = false) String path,
+                                          Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.createDirectory(userDetails.getId(), path, false));
+        } catch (MissingParentFolderException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при создании директории. " + e.getMessage()));
+        } catch (PathValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при создании директории. " + e.getMessage()));
+        } catch (DirectoryAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при создании директории. " + e.getMessage()));
+        } catch (MinioServiceException e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", "Ошибка при создании директории. " + e.getMessage()));
         }
     }
+}
