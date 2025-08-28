@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @AllArgsConstructor
 @ToString
-public class MinioObjectResponseDto {
+public class MinioDto {
     private final String path;
     private final String name;
 

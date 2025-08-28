@@ -2,6 +2,7 @@ package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
+import com.gross.cloudstorage.service.CloudStorageService;
 import com.gross.cloudstorage.service.MinioService;
 import com.gross.cloudstorage.utils.PathUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,10 +25,10 @@ import java.util.Map;
 @RequestMapping("api/resource/download")
 @Tag(name = "Скачивание ресурса")
 public class DownloadController {
-    private final MinioService minioService;
+    private final CloudStorageService cloudStorageService;
 
-    public DownloadController(MinioService minioService) {
-        this.minioService = minioService;
+    public DownloadController(CloudStorageService cloudStorageService) {
+        this.cloudStorageService = cloudStorageService;
     }
 
     @Operation(summary = "Скачать ресурс")
@@ -35,13 +36,13 @@ public class DownloadController {
     public ResponseEntity<?> download(@RequestParam(required = false) String path,
                                       Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        HttpHeaders headers = new HttpHeaders();
         boolean isDirectory = path.endsWith("/");
         String name = PathUtils.extractName(path);
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + (isDirectory ? name + ".zip" : name) + "\"");
-        InputStream inputStream = minioService.downloadResource(userDetails.getId(), path);
+        InputStream inputStream = cloudStorageService.downloadResource(userDetails.getId(), path);
         try {
-            return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_OCTET_STREAM)
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + (isDirectory ? name + ".zip" : name) + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(new InputStreamResource(inputStream));
         } catch (PathValidationException e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));

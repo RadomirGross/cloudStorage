@@ -1,9 +1,9 @@
 package com.gross.cloudstorage.controller;
 
-import com.gross.cloudstorage.dto.MinioObjectResponseDto;
+import com.gross.cloudstorage.dto.MinioDto;
 import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
-import com.gross.cloudstorage.service.MinioService;
+import com.gross.cloudstorage.service.CloudStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -18,10 +18,10 @@ import java.util.Map;
 @RequestMapping("api/directory")
 @Tag(name = "Операции с директориями")
 public class DirectoryController {
-    private final MinioService minioService;
+    private final CloudStorageService cloudStorageService;
 
-    public DirectoryController(MinioService minioService) {
-        this.minioService = minioService;
+    public DirectoryController(CloudStorageService cloudStorageService) {
+        this.cloudStorageService = cloudStorageService;
     }
 
     @Operation(summary = "Получить содержимое директории")
@@ -32,8 +32,8 @@ public class DirectoryController {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            List<MinioObjectResponseDto> objects =
-                    minioService.getUserFolder(userDetails.getId(), path);
+            List<MinioDto> objects =
+                    cloudStorageService.getUserDirectory(userDetails.getId(), path);
             return ResponseEntity.ok(objects);
         } catch (PathValidationException e) {
             return ResponseEntity.badRequest().body(Map.of("message","Ошибка при получении содержимого. "+e.getMessage()));
@@ -50,7 +50,7 @@ public class DirectoryController {
                 Authentication authentication){
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             try {
-                return ResponseEntity.status(HttpStatus.CREATED).body(minioService.createDirectory(userDetails.getId(), path, false));
+                return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.createDirectory(userDetails.getId(), path));
             } catch (MissingParentFolderException e) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Ошибка при создании директории. "+ e.getMessage()));
             } catch (PathValidationException e) {

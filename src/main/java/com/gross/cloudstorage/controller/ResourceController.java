@@ -2,6 +2,7 @@ package com.gross.cloudstorage.controller;
 
 import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
+import com.gross.cloudstorage.service.CloudStorageService;
 import com.gross.cloudstorage.service.MinioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,10 +19,10 @@ import java.util.Map;
 @RequestMapping("/api/resource")
 @Tag(name = "Операции с ресурсами")
 public class ResourceController {
-    private final MinioService minioService;
+    private final CloudStorageService cloudStorageService;
 
-    public ResourceController(MinioService minioService) {
-        this.minioService = minioService;
+    public ResourceController(CloudStorageService cloudStorageService) {
+        this.cloudStorageService = cloudStorageService;
     }
 
     @Operation(summary = "Получить информацию о ресурсе")
@@ -30,7 +31,7 @@ public class ResourceController {
                                          Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            return ResponseEntity.ok(minioService.getResourceInformation(userDetails.getId(), path));
+            return ResponseEntity.ok(cloudStorageService.getResourceInformation(userDetails.getId(), path));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         } catch (ResourcePathValidationException e) {
@@ -48,7 +49,7 @@ public class ResourceController {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(minioService.uploadResources(userDetails.getId(), path, objects));
+            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects));
         } catch (ResourceAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
         } catch (ResourcePathValidationException e) {
@@ -65,7 +66,7 @@ public class ResourceController {
                                             Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            minioService.deleteResource(userDetails.getId(), path);
+            cloudStorageService.deleteResource(userDetails.getId(), path);
             return ResponseEntity.noContent().build();
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
@@ -83,7 +84,7 @@ public class ResourceController {
                                           Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            return ResponseEntity.ok().body(minioService.moveResource(userDetails.getId(), from, to));
+            return ResponseEntity.ok().body(cloudStorageService.moveResource(userDetails.getId(), from, to));
         } catch (PathValidationException e) {
             return ResponseEntity.badRequest().body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
         } catch (ResourceNotFoundException e) {

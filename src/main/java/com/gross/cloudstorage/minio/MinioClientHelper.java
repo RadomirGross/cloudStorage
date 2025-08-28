@@ -30,11 +30,6 @@ public class MinioClientHelper {
                         .build());
     }
 
-    public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
-            NoSuchAlgorithmException, InvalidKeyException {
-        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
-        return statObjectResponse != null && statObjectResponse.size() == 0 && folderPath.endsWith("/");
-    }
 
     public StatObjectResponse getStatObjectResponse(String bucketName, String path)
             throws IOException, MinioException, NoSuchAlgorithmException, InvalidKeyException {
@@ -50,14 +45,28 @@ public class MinioClientHelper {
         }
     }
 
+    public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
+        return statObjectResponse != null && statObjectResponse.size() == 0 && folderPath.endsWith("/");
+    }
+
     public boolean fileExists(String bucketName, String folderPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
         return getStatObjectResponse(bucketName, folderPath) != null;
     }
 
-    public boolean resourceExists(String bucketName, String folderPath) throws IOException, MinioException,
+    public boolean resourceExists(String bucketName, String folderPath, boolean isDirectory) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
-        return getStatObjectResponse(bucketName, folderPath) != null;
+        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
+        if (statObjectResponse == null) {
+            return false;
+        }
+
+        if (!isDirectory) {
+            return true;
+        }
+        return folderPath.endsWith("/") && statObjectResponse.size() == 0;
     }
 
     public boolean createBucket(String bucketName) throws IOException, MinioException,
@@ -106,8 +115,6 @@ public class MinioClientHelper {
                         .build()
         );
     }
-
-
 
 
     public Iterable<Result<Item>> getFolder(String bucketName, String path) {
@@ -166,9 +173,9 @@ public class MinioClientHelper {
 
     public void copyDirectory(String bucketName, String from, String to) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
-        for (Result<Item> listObject : getListObjects(bucketName,from,true)) {
+        for (Result<Item> listObject : getListObjects(bucketName, from, true)) {
             String objectToCopy = listObject.get().objectName();
-            copyFile(bucketName,objectToCopy,to+objectToCopy.substring(from.length()));
+            copyFile(bucketName, objectToCopy, to + objectToCopy.substring(from.length()));
         }
     }
 
@@ -176,7 +183,7 @@ public class MinioClientHelper {
             NoSuchAlgorithmException, InvalidKeyException {
         if (isDirectory) {
             copyDirectory(bucketName, from, to);
-        }else copyFile(bucketName, from, to);
+        } else copyFile(bucketName, from, to);
     }
 
 

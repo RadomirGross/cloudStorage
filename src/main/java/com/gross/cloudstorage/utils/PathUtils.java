@@ -6,15 +6,16 @@ import com.gross.cloudstorage.exception.UserPrefixException;
 public class PathUtils {
 
     public static String addUserPrefix(long userId, String path) {
-        if(path==null)
-        {path="";}
+        if (path == null) {
+            path = "";
+        }
 
         if (!path.startsWith("user-" + userId + "-files/" + path)) {
             return "user-" + userId + "-files/" + path;
         } else throw new UserPrefixException("Префикс пользователя уже существует");
     }
 
-    public static String stripUserPrefix( long userId,String path) {
+    public static String stripUserPrefix(long userId, String path) {
         String prefix = "user-" + userId + "-files/";
         if (path.startsWith(prefix)) {
             return path.substring(prefix.length());
@@ -23,19 +24,24 @@ public class PathUtils {
     }
 
     public static void validatePath(String path, boolean isDirectory) {
-        if (path == null ) {
-            throw new PathValidationException("Путь "+(isDirectory?"директории":"файла")+" не может быть пустым");
+        if (path == null || path.isEmpty()) {
+            throw new PathValidationException("Путь " + (isDirectory ? "директории" : "файла") + " не может быть пустым");
         }
 
-        if (path.contains("..") || path.contains("//")) {
+        if (path.contains("..") || path.contains("//")||path.contains("\\")) {
             throw new PathValidationException("Недопустимые символы в пути");
         }
-        if (!path.endsWith("/") && isDirectory) {
+        if (isDirectory && !path.endsWith("/")) {
             throw new PathValidationException("Путь директории должен заканчиваться на /");
+        }
+
+        if (!isDirectory && path.endsWith("/")) {
+            throw new PathValidationException("Путь файла не должен заканчиваться на /");
         }
     }
 
     public static void validatePathToDeleteResource(String path) {
+
         if (path == null || path.isEmpty()) {
             throw new PathValidationException("Путь к ресурсу не может быть пустым");
         }
@@ -46,17 +52,18 @@ public class PathUtils {
 
     public static void validateSearchRequest(String query) {
 
-        if (query==null || query.trim().isEmpty()) {
+        if (query == null || query.trim().isEmpty()) {
             throw new PathValidationException("Поисковой запрос не может быть пустым");
         }
-        if (!query.matches("^[a-zA-Z0-9а-яА-Я._\\-/ ]+$"))
-        { throw new PathValidationException("Поисковой запрос содержит недопустимые символы");}
+        if (!query.matches("^[a-zA-Z0-9а-яА-Я._\\-/ ]+$")) {
+            throw new PathValidationException("Поисковой запрос содержит недопустимые символы");
+        }
     }
 
     public static String extractName(String path) {
         String[] parts = path.split("/");
-        boolean isRootDirectory = parts.length==1;
-        if(isRootDirectory) return "";
+        boolean isRootDirectory = parts.length == 1;
+        if (isRootDirectory) return "";
 
         if (path.endsWith("/")) {
             return parts[parts.length - 1] + "/";
