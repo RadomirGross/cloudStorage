@@ -28,7 +28,7 @@ public class MinioDirectoryService {
     private final String bucketName;
     private final Logger logger;
 
-    public MinioDirectoryService(MinioClientHelper minioClientHelper,
+    private MinioDirectoryService(MinioClientHelper minioClientHelper,
                                  MinioValidationService minioValidationService,
                                  @Value("${minio.bucket-name}")String bucketName) {
         this.minioClientHelper = minioClientHelper;
@@ -62,17 +62,14 @@ public class MinioDirectoryService {
         }
     }
 
-    public List<MinioDto> getDirectory(String path, long userId) {
+    private List<MinioDto> getDirectory(String path, long userId) {
         Iterable<Result<Item>> folder = minioClientHelper.getFolder(bucketName, path);
         List<Item> filtered = findAndDeleteDirectoryEmptyFile(folder, path);
 
         return MinioMapper.toListDto(filtered, userId);
-
     }
 
-
-
-    public List<Item> findAndDeleteDirectoryEmptyFile(Iterable<Result<Item>> folder, String path) {
+    private List<Item> findAndDeleteDirectoryEmptyFile(Iterable<Result<Item>> folder, String path) {
         List<Item> filtered = new ArrayList<>();
         try {
             for (Result<Item> result : folder) {

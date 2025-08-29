@@ -28,7 +28,7 @@ public class MinioResourceService {
     private final Logger logger;
     private final MinioValidationService minioValidationService;
 
-    public MinioResourceService(MinioClientHelper minioClientHelper,
+    private MinioResourceService(MinioClientHelper minioClientHelper,
                                 @Value("${minio.bucket-name}") String bucketName,
                                 MinioValidationService minioValidationService) {
         this.minioClientHelper = minioClientHelper;
@@ -93,7 +93,6 @@ public class MinioResourceService {
         try {
             minioClientHelper.copyResource(bucketName, fullFrom, fullTo, isDirectory);
             deleteResource(userId, from);
-            System.out.println("fullTo: " + fullTo);
             return getResourceInformation(userId, fullTo);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при перемещении или переименовании  ", e);

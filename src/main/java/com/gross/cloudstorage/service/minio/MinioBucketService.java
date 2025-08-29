@@ -19,12 +19,12 @@ public class MinioBucketService {
     private final String bucketName;
     private final Logger logger;
 
-    public MinioBucketService(MinioClientHelper minioClientHelper, @Value("${minio.bucket-name}") String bucketName) {
+    private MinioBucketService(MinioClientHelper minioClientHelper, @Value("${minio.bucket-name}") String bucketName) {
         this.minioClientHelper = minioClientHelper;
         this.bucketName = bucketName;
         this.logger = LoggerFactory.getLogger(this.getClass());}
 
-    public void createBucket(String bucketName) {
+    private void createBucket(String bucketName) {
         try {
             if (minioClientHelper.createBucket(bucketName)) {
                 logger.info("создался bucket - {}", bucketName);
@@ -36,7 +36,7 @@ public class MinioBucketService {
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         createBucket(bucketName);
     }
 

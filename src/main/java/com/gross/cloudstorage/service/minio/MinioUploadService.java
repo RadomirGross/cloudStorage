@@ -5,6 +5,7 @@ import com.gross.cloudstorage.exception.MinioServiceException;
 import com.gross.cloudstorage.exception.ResourceAlreadyExistsException;
 import com.gross.cloudstorage.mapper.MinioMapper;
 import com.gross.cloudstorage.minio.MinioClientHelper;
+import com.gross.cloudstorage.service.StorageProtectionService;
 import com.gross.cloudstorage.utils.PathUtils;
 import io.minio.errors.MinioException;
 import org.slf4j.Logger;
@@ -25,18 +26,22 @@ public class MinioUploadService {
     private final String bucketName;
     private final Logger logger;
     private final MinioValidationService minioValidationService;
+    private final StorageProtectionService storageProtectionService;
 
-    public MinioUploadService(MinioClientHelper minioClientHelper,
-                              MinioValidationService minioValidationService,
-                              @Value("${minio.bucket-name}") String bucketName, MinioValidationService minioValidationService1) {
+    private MinioUploadService(MinioClientHelper minioClientHelper,
+                               @Value("${minio.bucket-name}") String bucketName,
+                               MinioValidationService minioValidationService, StorageProtectionService storageProtectionService) {
         this.minioClientHelper = minioClientHelper;
         this.bucketName = bucketName;
-        this.minioValidationService = minioValidationService1;
+        this.minioValidationService = minioValidationService;
+        this.storageProtectionService = storageProtectionService;
         this.logger = LoggerFactory.getLogger(this.getClass());
     }
 
-    public MinioDto uploadFile(long userId, String path, MultipartFile object) {
+    private MinioDto uploadFile(long userId, String path, MultipartFile object) {
         try {
+
+            storageProtectionService.validateUploadSpace(object.getSize());
             String fullPath = PathUtils.addUserPrefix(userId, path);
             PathUtils.validatePath(fullPath, true);
             if (!minioClientHelper.fileExists(bucketName, fullPath + object.getOriginalFilename())) {
@@ -52,6 +57,8 @@ public class MinioUploadService {
 
     public List<MinioDto> uploadResource(long userId, String path,
                                          List<MultipartFile> objects) {
+        long totalSize = objects.stream().mapToLong(MultipartFile::getSize).sum();
+        storageProtectionService.validateUploadSpace(totalSize);
         List<MinioDto> uploaded = new ArrayList<>();
         for (MultipartFile object : objects) {
             uploaded.add(uploadFile(userId, path, object));

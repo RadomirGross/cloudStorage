@@ -21,7 +21,7 @@ public class MinioValidationService {
     private final String bucketName;
     private final Logger logger;
 
-    public MinioValidationService(MinioClientHelper minioClientHelper, @Value("${minio.bucket-name}") String bucketName) {
+    private MinioValidationService(MinioClientHelper minioClientHelper, @Value("${minio.bucket-name}") String bucketName) {
         this.minioClientHelper = minioClientHelper;
         this.bucketName = bucketName;
         this.logger = LoggerFactory.getLogger(this.getClass());

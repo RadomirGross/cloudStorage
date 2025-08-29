@@ -23,19 +23,19 @@ public class PathUtils {
         throw new UserPrefixException("Ошибка при удалении префикса. Префикс отсутствует.");
     }
 
-    public static void validatePath(String path, boolean isDirectory) {
-        if (path == null || path.isEmpty()) {
+    public static void validatePath(String fullPath, boolean isDirectory) {
+        if (fullPath == null || fullPath.isEmpty()) {
             throw new PathValidationException("Путь " + (isDirectory ? "директории" : "файла") + " не может быть пустым");
         }
-
-        if (path.contains("..") || path.contains("//")||path.contains("\\")) {
+        String path = PathUtils.extractPath(fullPath);
+        if (path.contains("..") || path.contains("//") || path.contains("\\")) {
             throw new PathValidationException("Недопустимые символы в пути");
         }
-        if (isDirectory && !path.endsWith("/")) {
+        if (isDirectory && !fullPath.endsWith("/")) {
             throw new PathValidationException("Путь директории должен заканчиваться на /");
         }
 
-        if (!isDirectory && path.endsWith("/")) {
+        if (!isDirectory && fullPath.endsWith("/")) {
             throw new PathValidationException("Путь файла не должен заканчиваться на /");
         }
     }

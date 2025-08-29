@@ -24,7 +24,7 @@ public class MinioDownloadService {
     private final String bucketName;
     private final Logger logger;
 
-    public MinioDownloadService(MinioClientHelper minioClientHelper, MinioValidationService minioValidationService, @Value("${minio.bucket-name}") String bucketName) {
+    private MinioDownloadService(MinioClientHelper minioClientHelper, MinioValidationService minioValidationService, @Value("${minio.bucket-name}") String bucketName) {
         this.minioClientHelper = minioClientHelper;
         this.minioValidationService = minioValidationService;
         this.bucketName = bucketName;
@@ -45,7 +45,7 @@ public class MinioDownloadService {
         }else return downloadFile(fullPath);
     }
 
-    public InputStream downloadFile(String path) {
+    private InputStream downloadFile(String path) {
         PathUtils.validatePath(path, false);
         try {
             return minioClientHelper.getObject(bucketName, path);
@@ -55,7 +55,7 @@ public class MinioDownloadService {
         }
     }
 
-    public InputStream downloadDirectory(String path) {
+    private InputStream downloadDirectory(String path) {
         PathUtils.validatePath(path, true);
 
         try {
@@ -70,7 +70,7 @@ public class MinioDownloadService {
         }
     }
 
-    public void createZipArchive(String path, PipedOutputStream pipedOutputStream) {
+    private void createZipArchive(String path, PipedOutputStream pipedOutputStream) {
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(pipedOutputStream)) {
             Iterable<Result<Item>> results = minioClientHelper.getListObjects(bucketName, path, true);
             for (Result<Item> result : results) {
