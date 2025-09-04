@@ -16,19 +16,37 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 @Service
 public class StorageProtectionService {
     @Value("${storage.reserved-bytes}")
     private long reservedBytes;
+    private final AtomicLong reservedSpace = new AtomicLong(reservedBytes);
     private final MinioAdminClient minioAdminClient;
 
     public StorageProtectionService(MinioAdminClient minioAdminClient) {
         this.minioAdminClient = minioAdminClient;
     }
 
-    public void validateUploadSpace(long size) {
+    public void addReservedSpace(long size) {
+        reservedSpace.addAndGet(size);
+    }
+
+    public void removeReservedSpace(long size) {
+        reservedSpace.addAndGet(-size);
+    }
+
+    public boolean hasEnoughSpace(long objectSize) {
+        long availableSpace = availableSpace();
+        if (availableSpace - objectSize < reservedSpace.get()) {
+            throw new StorageQuotaExceededException("Недостаточно места на сервере. Попробуйте позже.");
+        }
+        return true;
+    }
+
+    public long availableSpace() {
         try {
             Message serverMessage = minioAdminClient.getServerInfo();
             List<ServerProperties> servers = serverMessage.servers();
@@ -36,13 +54,9 @@ public class StorageProtectionService {
             List<Disk> allDisks = server.disks();
             Disk mydisk = allDisks.get(0);
 
-            long availableSpace = mydisk.availspace().longValueExact();
-            if (availableSpace - size < reservedBytes) {
-                throw new StorageQuotaExceededException("Недостаточно места на сервере. Попробуйте позже.");
-            }
-
+            return mydisk.availspace().longValueExact();
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new MinioServiceException("Ошибка при получении информации о хранилище.",e);
+            throw new MinioServiceException("Ошибка при получении информации о хранилище.", e);
         }
     }
 

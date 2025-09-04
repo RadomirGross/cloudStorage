@@ -3,7 +3,9 @@ package com.gross.cloudstorage.service.minio;
 import com.gross.cloudstorage.exception.DirectoryAlreadyExistsException;
 import com.gross.cloudstorage.exception.MinioServiceException;
 import com.gross.cloudstorage.exception.MissingParentFolderException;
+import com.gross.cloudstorage.exception.ResourceAlreadyExistsException;
 import com.gross.cloudstorage.minio.MinioClientHelper;
+import com.gross.cloudstorage.utils.PathUtils;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
@@ -38,7 +40,7 @@ public class MinioValidationService {
 
     public void validateParentFoldersExist(String path, boolean createNonExistentFolders) {
         String[] parts = path.split("/");
-        String name = parts[parts.length - 1];
+        String name = PathUtils.extractName(path);
         StringBuilder pathForValidation = new StringBuilder();
         pathForValidation.append(parts[0]).append("/");
 
@@ -47,15 +49,15 @@ public class MinioValidationService {
             if (!isResourceExists(pathForValidation.toString(), true)) {
                 if (createNonExistentFolders) {
                     try {
-                        minioClientHelper.createFolder(bucketName, pathForValidation.toString());
+                        minioClientHelper.createDirectory(bucketName, pathForValidation.toString());
                     } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
                         throw new MinioServiceException("Ошибка при создании директории. ");
                     }
                 } else throw new MissingParentFolderException("Не существует родительская директория");
             }
         }
-        if (isResourceExists(pathForValidation.append(name).append("/").toString(), true)) {
-            throw new DirectoryAlreadyExistsException("Директория по этому пути уже существует");
+        if (isResourceExists(pathForValidation.append(name).toString(), name.endsWith("/"))) {
+            throw new ResourceAlreadyExistsException("Ресурс по этому пути уже существует");
         }
     }
 

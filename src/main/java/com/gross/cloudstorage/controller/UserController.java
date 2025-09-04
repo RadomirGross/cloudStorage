@@ -22,8 +22,8 @@ import java.util.Map;
 public class UserController {
     private final AuthService authService;
 
-    public UserController(AuthService authService, AuthService authService1) {
-        this.authService = authService1;
+    public UserController(AuthService authService) {
+        this.authService = authService;
     }
 
     @Operation(summary = "Получить зарегистрированного пользователя")

@@ -5,7 +5,9 @@ import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.CloudStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,23 +43,26 @@ public class ResourceController {
     }
 
     @Operation(summary = "Загрузить ресурс в облачное хранилище")
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadResource(@RequestParam(required = false) String path,
-                                            @RequestParam("object") List<MultipartFile> objects,
-                                            Authentication authentication) {
+                                            @RequestPart("object") List<MultipartFile> objects,
+                                            Authentication authentication, HttpServletRequest request) {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
+            long contentLength = request.getContentLengthLong();
+            System.out.println("contentLength " + contentLength);
             return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects));
         } catch (ResourceAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
         } catch (ResourcePathValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message","Ошибка при загрузке в облачное хранилище. "+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
+        } catch (StorageQuotaExceededException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         }
     }
-
 
     @Operation(summary = "Удалить ресурс")
     @DeleteMapping
@@ -68,11 +73,11 @@ public class ResourceController {
             cloudStorageService.deleteResource(userDetails.getId(), path);
             return ResponseEntity.noContent().build();
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при удалении ресурса. " + e.getMessage()));
         } catch (ResourcePathValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Ошибка при удалении ресурса. " + e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message","Ошибка при удалении ресурса. "+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Ошибка при удалении ресурса. " + e.getMessage()));
         }
     }
 
@@ -85,13 +90,13 @@ public class ResourceController {
         try {
             return ResponseEntity.ok().body(cloudStorageService.moveResource(userDetails.getId(), from, to));
         } catch (PathValidationException e) {
-            return ResponseEntity.badRequest().body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при перемещении."+e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
         } catch (ResourceAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.internalServerError().body(Map.of("message","Ошибка при перемещении."+ e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
         }
     }
 }

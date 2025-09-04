@@ -1,5 +1,6 @@
 package com.gross.cloudstorage.minio;
 
+import com.gross.cloudstorage.exception.MinioServiceException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
@@ -45,6 +46,21 @@ public class MinioClientHelper {
         }
     }
 
+    public long getResourceSize(String bucketName, String path) throws IOException, MinioException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        boolean isDirectory = path.endsWith("/");
+        long totalSize = 0L;
+
+        if (isDirectory) {
+            for (Result<Item> result : getListObjects(bucketName, path, true)) {
+                Item item = result.get();
+                totalSize += item.size();
+            }
+            return totalSize;
+        } else return getStatObjectResponse(bucketName, path).size();
+
+    }
+
     public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
         StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
@@ -56,9 +72,9 @@ public class MinioClientHelper {
         return getStatObjectResponse(bucketName, folderPath) != null;
     }
 
-    public boolean resourceExists(String bucketName, String folderPath, boolean isDirectory) throws IOException, MinioException,
+    public boolean resourceExists(String bucketName, String path, boolean isDirectory) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
-        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
+        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, path);
         if (statObjectResponse == null) {
             return false;
         }
@@ -66,7 +82,7 @@ public class MinioClientHelper {
         if (!isDirectory) {
             return true;
         }
-        return folderPath.endsWith("/") && statObjectResponse.size() == 0;
+        return path.endsWith("/") && statObjectResponse.size() == 0;
     }
 
     public boolean createBucket(String bucketName) throws IOException, MinioException,
@@ -83,7 +99,7 @@ public class MinioClientHelper {
         } else return false;
     }
 
-    public void createFolder(String bucketName, String fullPath) throws IOException, MinioException,
+    public void createDirectory(String bucketName, String fullPath) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
         minioClient.putObject(
@@ -117,7 +133,7 @@ public class MinioClientHelper {
     }
 
 
-    public Iterable<Result<Item>> getFolder(String bucketName, String path) {
+    public Iterable<Result<Item>> getDirectory(String bucketName, String path) {
         return getListObjects(bucketName, path, false);
     }
 

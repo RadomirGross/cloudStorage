@@ -41,7 +41,11 @@ public class MinioDirectoryService {
         PathUtils.validatePath(fullPath, true);
         if (minioValidationService.isResourceExists(fullPath, true)) {
             return getDirectory(fullPath, userId);
-        } else throw new ResourceNotFoundException("Директория по пути " + path + " не найдена");
+        } else if(path.isEmpty()){
+            createDirectory(userId,path,true);
+            return getDirectory(fullPath, userId);
+        }else {
+            throw new ResourceNotFoundException("Директория по пути " + path + " не найдена");}
     }
 
     public MinioDto createDirectory(long userId, String path, boolean isRootFolder) {
@@ -54,7 +58,7 @@ public class MinioDirectoryService {
         minioValidationService.validateParentFoldersExist(fullPath, false);
 
         try {
-            minioClientHelper.createFolder(bucketName, fullPath);
+            minioClientHelper.createDirectory(bucketName, fullPath);
             return MinioMapper.toDtoJustForDirectory(fullPath, userId);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при создании папки {}:", path, e);
@@ -63,7 +67,7 @@ public class MinioDirectoryService {
     }
 
     private List<MinioDto> getDirectory(String path, long userId) {
-        Iterable<Result<Item>> folder = minioClientHelper.getFolder(bucketName, path);
+        Iterable<Result<Item>> folder = minioClientHelper.getDirectory(bucketName, path);
         List<Item> filtered = findAndDeleteDirectoryEmptyFile(folder, path);
 
         return MinioMapper.toListDto(filtered, userId);

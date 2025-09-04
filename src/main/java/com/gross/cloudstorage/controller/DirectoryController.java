@@ -29,7 +29,7 @@ public class DirectoryController {
     public ResponseEntity<?> getFolder
             (@RequestParam(required = false) String path,
              Authentication authentication) {
-
+        System.out.println("path "+path);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
             List<MinioDto> objects =

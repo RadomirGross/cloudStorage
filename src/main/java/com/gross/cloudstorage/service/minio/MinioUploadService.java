@@ -8,6 +8,7 @@ import com.gross.cloudstorage.minio.MinioClientHelper;
 import com.gross.cloudstorage.service.StorageProtectionService;
 import com.gross.cloudstorage.utils.PathUtils;
 import io.minio.errors.MinioException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,9 +29,11 @@ public class MinioUploadService {
     private final MinioValidationService minioValidationService;
     private final StorageProtectionService storageProtectionService;
 
+
     private MinioUploadService(MinioClientHelper minioClientHelper,
                                @Value("${minio.bucket-name}") String bucketName,
-                               MinioValidationService minioValidationService, StorageProtectionService storageProtectionService) {
+                               MinioValidationService minioValidationService,
+                               StorageProtectionService storageProtectionService) {
         this.minioClientHelper = minioClientHelper;
         this.bucketName = bucketName;
         this.minioValidationService = minioValidationService;
@@ -40,14 +43,14 @@ public class MinioUploadService {
 
     private MinioDto uploadFile(long userId, String path, MultipartFile object) {
         try {
-
-            storageProtectionService.validateUploadSpace(object.getSize());
+            String fileName = object.getOriginalFilename();
             String fullPath = PathUtils.addUserPrefix(userId, path);
+
             PathUtils.validatePath(fullPath, true);
-            if (!minioClientHelper.fileExists(bucketName, fullPath + object.getOriginalFilename())) {
+            if (!minioClientHelper.resourceExists(bucketName, fullPath+fileName,false)) {
+                minioValidationService.validateParentFoldersExist(fullPath+fileName, true);
                 minioClientHelper.uploadFile(bucketName, fullPath, object);
-                minioValidationService.validateParentFoldersExist(fullPath + object.getOriginalFilename(), true);
-                return MinioMapper.toDto(fullPath + object.getOriginalFilename(), object.getSize(), userId);
+                return MinioMapper.toDto(fullPath, object.getSize(), userId);
             } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при загрузке ресурса на сервер ", e);
@@ -58,7 +61,8 @@ public class MinioUploadService {
     public List<MinioDto> uploadResource(long userId, String path,
                                          List<MultipartFile> objects) {
         long totalSize = objects.stream().mapToLong(MultipartFile::getSize).sum();
-        storageProtectionService.validateUploadSpace(totalSize);
+        System.out.println("totalSize "+totalSize);
+        //storageProtectionService.validateUploadSpace(totalSize);
         List<MinioDto> uploaded = new ArrayList<>();
         for (MultipartFile object : objects) {
             uploaded.add(uploadFile(userId, path, object));

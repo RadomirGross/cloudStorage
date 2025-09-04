@@ -14,18 +14,15 @@ public class CloudStorageService {
     private final MinioDownloadService minioDownloadService;
     private final MinioUploadService minioUploadService;
     private final MinioResourceService minioResourceService;
-    private final MinioValidationService minioValidationService;
 
     public CloudStorageService(MinioDirectoryService minioDirectoryService,
                                MinioDownloadService minioDownloadService,
                                MinioUploadService minioUploadService,
-                               MinioResourceService minioResourceService,
-                               MinioValidationService minioValidationService) {
+                               MinioResourceService minioResourceService) {
         this.minioDirectoryService = minioDirectoryService;
         this.minioDownloadService = minioDownloadService;
         this.minioUploadService = minioUploadService;
         this.minioResourceService = minioResourceService;
-        this.minioValidationService = minioValidationService;
     }
 
     public List<MinioDto> getUserDirectory(long userId, String path){

@@ -26,3 +26,4 @@ springdoc.swagger-ui.operationsSorter=method
 
 spring.servlet.multipart.max-file-size=2GB
 spring.servlet.multipart.max-request-size=2GB
+storage.reserved-bytes=5000000000
