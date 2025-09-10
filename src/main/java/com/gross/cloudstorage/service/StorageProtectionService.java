@@ -3,13 +3,12 @@ package com.gross.cloudstorage.service;
 import com.gross.cloudstorage.exception.MinioServiceException;
 import com.gross.cloudstorage.exception.StorageQuotaExceededException;
 import io.minio.admin.MinioAdminClient;
-import io.minio.admin.messages.DataUsageInfo;
 import io.minio.admin.messages.info.Disk;
 import io.minio.admin.messages.info.Message;
 import io.minio.admin.messages.info.ServerProperties;
-import org.apache.catalina.util.ServerInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,29 +20,39 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class StorageProtectionService {
-    @Value("${storage.reserved-bytes}")
-    private long reservedBytes;
-    private final AtomicLong reservedSpace = new AtomicLong(reservedBytes);
-    private final MinioAdminClient minioAdminClient;
 
-    public StorageProtectionService(MinioAdminClient minioAdminClient) {
+    private final AtomicLong reservedSpace = new AtomicLong(0);
+    private final MinioAdminClient minioAdminClient;
+    Logger logger = LoggerFactory.getLogger(StorageProtectionService.class);
+
+    public StorageProtectionService(MinioAdminClient minioAdminClient, @Value("${storage.reserved-bytes}") long reservedBytes) {
         this.minioAdminClient = minioAdminClient;
+        this.reservedSpace.set(reservedBytes);
     }
 
     public void addReservedSpace(long size) {
         reservedSpace.addAndGet(size);
+        logger.info("Добавлено резервное место для {} bytes. Всего зарезервировано: {}" , size, reservedSpace.get());
     }
 
     public void removeReservedSpace(long size) {
         reservedSpace.addAndGet(-size);
+        logger.info("Удалено резервное место для {} bytes. Всего зарезервировано: {}", size, reservedSpace.get());
     }
 
     public boolean hasEnoughSpace(long objectSize) {
-        long availableSpace = availableSpace();
-        if (availableSpace - objectSize < reservedSpace.get()) {
-            throw new StorageQuotaExceededException("Недостаточно места на сервере. Попробуйте позже.");
+        long available = availableSpace();
+        long needed = reservedSpace.get() + objectSize;
+        return available >= needed;
+    }
+
+    public void assertEnoughSpace(long objectSize) {
+        if (!hasEnoughSpace(objectSize)) {
+            throw new StorageQuotaExceededException(
+                    String.format("Недостаточно места: требуется %d МБ, доступно %d МБ (резерв %d МБ).",
+                            objectSize/1024/1024, (availableSpace()-reservedSpace.get())/1024/1024, reservedSpace.get()/1024/1024)
+            );
         }
-        return true;
     }
 
     public long availableSpace() {

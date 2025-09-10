@@ -1,6 +1,5 @@
 package com.gross.cloudstorage.minio;
 
-import com.gross.cloudstorage.exception.MinioServiceException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
@@ -61,17 +60,6 @@ public class MinioClientHelper {
 
     }
 
-    public boolean folderExists(String bucketName, String folderPath) throws IOException, MinioException,
-            NoSuchAlgorithmException, InvalidKeyException {
-        StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, folderPath);
-        return statObjectResponse != null && statObjectResponse.size() == 0 && folderPath.endsWith("/");
-    }
-
-    public boolean fileExists(String bucketName, String folderPath) throws IOException, MinioException,
-            NoSuchAlgorithmException, InvalidKeyException {
-        return getStatObjectResponse(bucketName, folderPath) != null;
-    }
-
     public boolean resourceExists(String bucketName, String path, boolean isDirectory) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
         StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, path);
@@ -82,6 +70,7 @@ public class MinioClientHelper {
         if (!isDirectory) {
             return true;
         }
+
         return path.endsWith("/") && statObjectResponse.size() == 0;
     }
 
@@ -170,10 +159,10 @@ public class MinioClientHelper {
         );
     }
 
-    public ObjectWriteResponse copyFile(String bucketName, String from, String to) throws IOException, MinioException,
+    public void copyFile(String bucketName, String from, String to) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
 
-        return minioClient.copyObject(
+        minioClient.copyObject(
                 CopyObjectArgs.builder()
                         .bucket(bucketName)
                         .object(to)

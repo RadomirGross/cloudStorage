@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -43,16 +42,15 @@ public class ResourceController {
     }
 
     @Operation(summary = "Загрузить ресурс в облачное хранилище")
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     public ResponseEntity<?> uploadResource(@RequestParam(required = false) String path,
                                             @RequestPart("object") List<MultipartFile> objects,
                                             Authentication authentication, HttpServletRequest request) {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
-            long contentLength = request.getContentLengthLong();
-            System.out.println("contentLength " + contentLength);
-            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects));
+            Long contentLength = (Long) request.getAttribute("contentLength");
+            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects,contentLength));
         } catch (ResourceAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
         } catch (ResourcePathValidationException e) {

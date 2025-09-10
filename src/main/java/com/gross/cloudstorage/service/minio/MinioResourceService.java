@@ -1,16 +1,12 @@
 package com.gross.cloudstorage.service.minio;
 
 import com.gross.cloudstorage.dto.MinioDto;
-import com.gross.cloudstorage.exception.MinioServiceException;
-import com.gross.cloudstorage.exception.ResourceAlreadyExistsException;
-import com.gross.cloudstorage.exception.ResourceNotFoundException;
-import com.gross.cloudstorage.exception.StorageQuotaExceededException;
+import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.mapper.MinioMapper;
 import com.gross.cloudstorage.minio.MinioClientHelper;
 import com.gross.cloudstorage.service.StorageProtectionService;
 import com.gross.cloudstorage.utils.PathUtils;
 import io.minio.Result;
-import io.minio.StatObjectResponse;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
@@ -59,7 +55,7 @@ public class MinioResourceService {
         }
     }
 
-    public long getResourceSize(long userId, String path) {
+    public long getResourceSize(String path) {
         boolean isDirectory = path.endsWith("/");
         long totalSize = 0L;
         try {
@@ -113,18 +109,18 @@ public class MinioResourceService {
             throw new ResourceAlreadyExistsException("Ресурс по пути " + PathUtils.stripUserPrefix(userId, fullTo) + " уже существует. Операция невозможна.");
         }
 
+        long size = getResourceSize(fullFrom);
         try {
-            long size = minioClientHelper.getResourceSize(bucketName, fullFrom);
-            if (storageProtectionService.hasEnoughSpace(size)) {
-                storageProtectionService.addReservedSpace(size);
-                minioClientHelper.copyResource(bucketName, fullFrom, fullTo, isDirectory);
-                deleteResource(userId, from);
-                storageProtectionService.removeReservedSpace(size);
-                return getResourceInformation(userId, fullTo);
-            }
+            storageProtectionService.assertEnoughSpace(size);
+            storageProtectionService.addReservedSpace(size);
+            minioClientHelper.copyResource(bucketName, fullFrom, fullTo, isDirectory);
+            deleteResource(userId, from);
+            return getResourceInformation(userId, fullTo);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при перемещении или переименовании  ", e);
             throw new MinioServiceException("Ошибка при перемещении или переименовании");
+        } finally {
+            storageProtectionService.removeReservedSpace(size);
         }
     }
 

@@ -41,8 +41,8 @@ public class CloudStorageService {
         return minioResourceService.getResourceInformation(userId, path);
     }
 
-    public List<MinioDto> uploadResource(long userId, String path, List<MultipartFile> objects){
-        return minioUploadService.uploadResource(userId, path, objects);
+    public List<MinioDto> uploadResource(long userId, String path, List<MultipartFile> objects,long contentLength){
+        return minioUploadService.uploadResource(userId, path, objects,contentLength);
     }
 
     public void deleteResource(long userId, String path){

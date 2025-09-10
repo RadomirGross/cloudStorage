@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import org.springframework.web.multipart.MultipartException;
 
 import java.util.Map;
 import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
@@ -44,40 +43,7 @@ public class GlobalExceptionHandler {
                         "(Максимальный размер файла - " + maxFileSize + ", запроса - " + maxRequestSize + ")"));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalStateForUpload(IllegalStateException e) {
-        // Some containers wrap size exceed into IllegalStateException
-        Throwable cause = e.getCause();
-        if (cause instanceof SizeLimitExceededException ||
-                cause instanceof FileSizeLimitExceededException ) {
-            return ResponseEntity
-                    .status(HttpStatus.PAYLOAD_TOO_LARGE)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(Map.of("message", "Превышен максимальный размер загружаемого файла или запроса. " +
-                            "(Максимальный размер файла - " + maxFileSize + ", запроса - " + maxRequestSize + ")"));
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("message", "Некорректное состояние запроса"));
-    }
 
-    @ExceptionHandler(MultipartException.class)
-    public ResponseEntity<Map<String, String>> handleMultipartException(MultipartException e) {
-        logger.warn("Multipart exception:", e);
-        Throwable cause = e.getMostSpecificCause();
-        if (cause instanceof MaxUploadSizeExceededException ||
-                cause instanceof SizeLimitExceededException ||
-                cause instanceof FileSizeLimitExceededException) {
-            return ResponseEntity
-                    .status(HttpStatus.PAYLOAD_TOO_LARGE)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(Map.of("message", "Превышен максимальный размер загружаемого файла или запроса. " +
-                            "(Максимальный размер файла - " + maxFileSize + ", запроса - " + maxRequestSize + ")"));
-        }
-        return ResponseEntity
-                .badRequest()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("message", "Ошибка загрузки файла"));
-    }
+
 }
 
