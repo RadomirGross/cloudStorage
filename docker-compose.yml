@@ -1,7 +1,6 @@
-version: '3.8'
 
 services:
-  # PostgreSQL
+
   postgres:
     image: postgres:16-alpine
     container_name: cloudstorage-postgres
@@ -16,7 +15,7 @@ services:
     networks:
       - cloudstorage-network
 
-  # Redis
+
   redis:
     image: redis:7-alpine
     container_name: cloudstorage-redis
@@ -25,7 +24,7 @@ services:
     networks:
       - cloudstorage-network
 
-  # MinIO
+
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
     container_name: cloudstorage-minio
@@ -41,9 +40,9 @@ services:
     networks:
       - cloudstorage-network
 
-  # Приложение
+
   app:
-    image: grossradomir/cloud_storage:1.0
+    image: grossradomir/cloud_storage:1.1
     container_name: cloudstorage-app
     environment:
       SPRING_PROFILES_ACTIVE: docker
