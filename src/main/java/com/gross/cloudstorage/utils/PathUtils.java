@@ -40,15 +40,6 @@ public class PathUtils {
         }
     }
 
-    public static void validatePathToDeleteResource(String path) {
-
-        if (path == null || path.isEmpty()) {
-            throw new PathValidationException("Путь к ресурсу не может быть пустым");
-        }
-        if (path.contains("..") || path.contains("//")) {
-            throw new PathValidationException("Недопустимые символы в пути");
-        }
-    }
 
     public static void validateSearchRequest(String query) {
 
