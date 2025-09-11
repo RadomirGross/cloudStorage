@@ -76,7 +76,6 @@ public class EarlySizeCheckFilter implements Filter {
             request.setAttribute("contentLength",contentLength);
             chain.doFilter(httpRequest, httpResponse);
         } catch (Exception e) {
-            // Освобождаем резерв при любой ошибке в цепочке фильтров
             if (contentLength > 0) {
                 storageProtectionService.removeReservedSpace(contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
                 logger.info("Фильтр. Освобожден резерв {} байт из-за ошибки в цепочке фильтров", contentLength);
