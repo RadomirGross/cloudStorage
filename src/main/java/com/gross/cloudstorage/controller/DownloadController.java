@@ -43,7 +43,7 @@ public class DownloadController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + (isDirectory ? name + ".zip" : name) + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(new InputStreamResource(inputStream));
-        } catch (PathValidationException e) {
+        } catch (PathValidationException  e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));

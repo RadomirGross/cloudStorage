@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -41,10 +40,7 @@ public class MinioDirectoryService {
         PathUtils.validatePath(fullPath, true);
         if (minioValidationService.isResourceExists(fullPath, true)) {
             return getDirectory(fullPath, userId);
-        } else if(path.isEmpty()){
-            createDirectory(userId,path,true);
-            return getDirectory(fullPath, userId);
-        }else {
+        } else {
             throw new ResourceNotFoundException("Директория по пути " + path + " не найдена");}
     }
 
@@ -68,27 +64,12 @@ public class MinioDirectoryService {
 
     private List<MinioDto> getDirectory(String path, long userId) {
         Iterable<Result<Item>> folder = minioClientHelper.getDirectory(bucketName, path);
-        List<Item> filtered = findAndDeleteDirectoryEmptyFile(folder, path);
+        List<Item> filtered = minioValidationService.findAndDeleteDirectoryEmptyFile(folder, path);
 
         return MinioMapper.toListDto(filtered, userId);
     }
 
-    private List<Item> findAndDeleteDirectoryEmptyFile(Iterable<Result<Item>> folder, String path) {
-        List<Item> filtered = new ArrayList<>();
-        try {
-            for (Result<Item> result : folder) {
-                Item item = result.get();
-                if (minioValidationService.isDirectoryEmptyFile(item, path)) {
-                    continue;
-                }
-                filtered.add(item);
-            }
-            return filtered;
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
-            logger.error("Ошибка при фильтрации папки {}:", path, e);
-            throw new MinioServiceException("Ошибка при фильтрации папки");
-        }
-    }
+
 }
 
 

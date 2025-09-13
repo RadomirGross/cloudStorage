@@ -99,8 +99,8 @@ public class MinioResourceService {
         String fullFrom = PathUtils.addUserPrefix(userId, from);
         String fullTo = PathUtils.addUserPrefix(userId, to);
 
-        PathUtils.validatePath(from, isDirectory);
-        PathUtils.validatePath(to, isDirectory);
+        PathUtils.validatePath(fullFrom, isDirectory);
+        PathUtils.validatePath(fullTo, isDirectory);
 
         if (!minioValidationService.isResourceExists(fullFrom, isDirectory)) {
             throw new ResourceNotFoundException("Копируемый ресурс не найден");
@@ -109,11 +109,14 @@ public class MinioResourceService {
             throw new ResourceAlreadyExistsException("Ресурс по пути " + PathUtils.stripUserPrefix(userId, fullTo) + " уже существует. Операция невозможна.");
         }
 
+        minioValidationService.validateNotMovingParentIntoChild(from, to);
+        minioValidationService.validateNoNameConflicts(bucketName, PathUtils.extractPath(fullTo), PathUtils.extractName(fullTo));
         long size = getResourceSize(fullFrom);
         try {
             storageProtectionService.assertEnoughSpace(size);
             storageProtectionService.addReservedSpace(size);
             minioClientHelper.copyResource(bucketName, fullFrom, fullTo, isDirectory);
+            logger.info("Успешно скопирован файл {} - {}", fullFrom, fullTo);
             deleteResource(userId, from);
             return getResourceInformation(userId, fullTo);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
@@ -129,15 +132,17 @@ public class MinioResourceService {
         boolean isDirectory = path.endsWith("/");
         PathUtils.validatePath(fullPath, isDirectory);
         try {
-            if (minioValidationService.isResourceExists(path, isDirectory)) {
+            if (!minioValidationService.isResourceExists(fullPath, isDirectory)) {
                 throw new ResourceNotFoundException("По пути -" + PathUtils.stripUserPrefix(userId, path) + "не найден" +
                         (isDirectory ? "а директория" : "файл") + "для удаления");
             }
 
             if (isDirectory) {
                 minioClientHelper.deleteDirectory(bucketName, fullPath);
+                logger.info("Успешно удален директория {}", fullPath);
             } else {
                 minioClientHelper.deleteFile(bucketName, fullPath);
+                logger.info("Успешно удален файл {}", fullPath);
             }
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при удалении ресурса {}:", path, e);

@@ -54,8 +54,10 @@ public class MinioUploadService {
             String fileName = object.getOriginalFilename();
             String fullPath = PathUtils.addUserPrefix(userId, path);
             PathUtils.validatePath(fullPath, true);
+
             if (!minioClientHelper.resourceExists(bucketName, fullPath + fileName, false)) {
                 minioValidationService.validateParentFoldersExist(fullPath + fileName, true);
+                minioValidationService.validateNoNameConflicts(bucketName,fullPath,fileName);
                 minioClientHelper.uploadFile(bucketName, fullPath, object);
                 return MinioMapper.toDto(fullPath+fileName, object.getSize(), userId);
             } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");

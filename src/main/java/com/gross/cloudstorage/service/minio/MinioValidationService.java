@@ -1,11 +1,9 @@
 package com.gross.cloudstorage.service.minio;
 
-import com.gross.cloudstorage.exception.DirectoryAlreadyExistsException;
-import com.gross.cloudstorage.exception.MinioServiceException;
-import com.gross.cloudstorage.exception.MissingParentFolderException;
-import com.gross.cloudstorage.exception.ResourceAlreadyExistsException;
+import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.minio.MinioClientHelper;
 import com.gross.cloudstorage.utils.PathUtils;
+import io.minio.Result;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
@@ -16,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class MinioValidationService {
@@ -35,6 +35,14 @@ public class MinioValidationService {
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при проверке существования ресурса {}:", path.substring(path.indexOf('/') + 1), e);
             throw new MinioServiceException("Ошибка при проверке существования ресурса ");
+        }
+    }
+
+    public void validateNotMovingParentIntoChild(String from, String to) {
+        if (to.startsWith(from)) {
+            throw new ResourceConflictException(
+                    String.format("Невозможно переместить директорию '%s' в '%s': " +
+                            "нельзя перемещать родительскую директорию в дочернюю.", from, to));
         }
     }
 
@@ -61,9 +69,42 @@ public class MinioValidationService {
         }
     }
 
+
     public boolean isDirectoryEmptyFile(Item item, String path) {
         return item.objectName().equals(path) && item.size() == 0 && item.objectName().endsWith("/");
+    }
 
+    public void validateNoNameConflicts(String bucketName, String path, String fileName) {
+
+            Iterable<Result<Item>> listObjects = minioClientHelper.getListObjects(bucketName, path, false);
+            List<Item> filtered = findAndDeleteDirectoryEmptyFile(listObjects, path);
+            for (Item item : filtered) {
+                if (PathUtils.extractName(item.objectName()).equals(fileName + "/")) {
+                    logger.info("По пути: {} уже есть директория с именем {}. Для избежания конфликта имён не используйте для имя файла," +
+                                    " совпадающее с именем директории по этому пути. Рекомендуем добавить расширение для файла.", path + "/" + fileName,
+                            PathUtils.extractName(item.objectName()));
+                    throw new ConflictingNameException(
+                            String.format("Конфликт имен: файл '%s' нельзя создать, так как уже существует папка '%s'. " +
+                                    "Используйте другое имя или добавьте расширение файла.", fileName, PathUtils.extractName(item.objectName())));
+                }
+            }
+    }
+
+    public List<Item> findAndDeleteDirectoryEmptyFile(Iterable<Result<Item>> folder, String path) {
+        List<Item> filtered = new ArrayList<>();
+        try {
+            for (Result<Item> result : folder) {
+                Item item = result.get();
+                if (isDirectoryEmptyFile(item, path)) {
+                    continue;
+                }
+                filtered.add(item);
+            }
+            return filtered;
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
+            logger.error("Ошибка при фильтрации папки {}:", path, e);
+            throw new MinioServiceException("Ошибка при фильтрации папки");
+        }
     }
 }
 

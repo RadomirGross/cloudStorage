@@ -62,6 +62,12 @@ public class MinioClientHelper {
 
     public boolean resourceExists(String bucketName, String path, boolean isDirectory) throws IOException, MinioException,
             NoSuchAlgorithmException, InvalidKeyException {
+        Iterable<Result<Item>> list=getListObjects(bucketName, path,true );
+        System.out.println("resourceExists: bucketName="+bucketName+", path="+path+", recursive=true");
+        for (Result<Item> itemResult : list) {
+            System.out.println(itemResult.get().objectName());
+        }
+
         StatObjectResponse statObjectResponse = getStatObjectResponse(bucketName, path);
         if (statObjectResponse == null) {
             return false;
@@ -127,11 +133,14 @@ public class MinioClientHelper {
     }
 
     public Iterable<Result<Item>> getListObjects(String bucketName, String path, boolean recursive) {
+
         return minioClient.listObjects(
                 ListObjectsArgs.builder()
                         .bucket(bucketName)
                         .prefix(path)
                         .recursive(recursive)
+                        .includeVersions(true)
+                        .maxKeys(1000)
                         .build()
         );
     }

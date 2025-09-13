@@ -50,11 +50,11 @@ public class ResourceController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         try {
             Long contentLength = (Long) request.getAttribute("contentLength");
-            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects,contentLength));
+            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects, contentLength));
         } catch (ResourceAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
-        } catch (ResourcePathValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
+        } catch (ResourcePathValidationException | ConflictingNameException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (MinioServiceException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
         } catch (StorageQuotaExceededException e) {
@@ -88,13 +88,13 @@ public class ResourceController {
         try {
             return ResponseEntity.ok().body(cloudStorageService.moveResource(userDetails.getId(), from, to));
         } catch (PathValidationException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
-        } catch (ResourceAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        } catch (ResourceAlreadyExistsException | ResourceConflictException | ConflictingNameException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         } catch (MinioServiceException e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", "Ошибка при перемещении." + e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
         }
     }
 }
