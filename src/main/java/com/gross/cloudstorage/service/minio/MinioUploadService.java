@@ -59,6 +59,7 @@ public class MinioUploadService {
                 minioValidationService.validateParentFoldersExist(fullPath + fileName, true);
                 minioValidationService.validateNoNameConflicts(bucketName,fullPath,fileName);
                 minioClientHelper.uploadFile(bucketName, fullPath, object);
+                logger.info("Успешно загружен файл: {}, размером: {} байт", fullPath+fileName, object.getSize());
                 return MinioMapper.toDto(fullPath+fileName, object.getSize(), userId);
             } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {

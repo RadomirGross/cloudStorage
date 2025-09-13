@@ -32,12 +32,12 @@ public class StorageProtectionService {
 
     public void addReservedSpace(long size) {
         reservedSpace.addAndGet(size);
-        logger.info("Добавлено резервное место для {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB" , size, reservedSpace.get(),availableSpace()/1024/1024);
+        logger.info("Добавлено резервное место на {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB" , size, reservedSpace.get(),availableSpace()/1024/1024);
     }
 
     public void removeReservedSpace(long size) {
         reservedSpace.addAndGet(-size);
-        logger.info("Удалено резервное место для {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB", size, reservedSpace.get(),availableSpace()/1024/1024);
+        logger.info("Удалено резервное место на {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB", size, reservedSpace.get(),availableSpace()/1024/1024);
     }
 
     public boolean hasEnoughSpace(long objectSize) {
