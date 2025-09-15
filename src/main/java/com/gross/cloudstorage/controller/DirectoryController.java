@@ -32,17 +32,9 @@ public class DirectoryController {
             (@RequestParam(required = false) String path,
              Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        try {
             List<MinioDto> objects =
                     cloudStorageService.getUserDirectory(userDetails.getId(), path);
             return ResponseEntity.ok(objects);
-        } catch (PathValidationException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при получении содержимого. " + e.getMessage()));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при получении содержимого. " + e.getMessage()));
-        } catch (MinioServiceException e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", "Ошибка при получении содержимого. " + e.getMessage()));
-        }
     }
 
     @Operation(summary = "Создать новую директорию")
