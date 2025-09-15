@@ -2,6 +2,7 @@ package com.gross.cloudstorage.config;
 
 import com.gross.cloudstorage.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +21,8 @@ import org.springframework.security.web.context.SecurityContextRepository;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    @Value("${security.permit-all.paths}")
+    private String[] permitAllPaths;
 
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
@@ -27,27 +30,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/static/**",
-                                "/assets/**",
-                                "/favicon.ico",
-                                "/config.js",
-                                "/index.html",
-                                "/",
-                                "/login",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/webjars/**",
-                                "/registration",
-                                "/files/**"
-
-
-                        ).permitAll()
+                        .requestMatchers(permitAllPaths).permitAll()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)

@@ -4,7 +4,6 @@ import com.gross.cloudstorage.dto.AuthRequestDto;
 import com.gross.cloudstorage.exception.LogoutException;
 import com.gross.cloudstorage.exception.MinioServiceException;
 import com.gross.cloudstorage.exception.UserIsNotAuthenticatedException;
-import com.gross.cloudstorage.mapper.UserMapper;
 import com.gross.cloudstorage.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 
@@ -22,22 +20,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final CloudStorageService cloudStorageService;
-    private final UserMapper userMapper;
 
-    public AuthService(UserService userService, PasswordEncoder passwordEncoder,
+    public AuthService(UserService userService,
                        AuthenticationManager authenticationManager,
                        SecurityContextRepository securityContextRepository,
-                       CloudStorageService cloudStorageService, UserMapper userMapper) {
+                       CloudStorageService cloudStorageService) {
         this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.cloudStorageService = cloudStorageService;
-        this.userMapper = userMapper;
     }
 
     public String register(AuthRequestDto authRequestDto, HttpServletRequest httpRequest) {

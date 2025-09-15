@@ -19,10 +19,6 @@ public class UserService {
         this.userMapper = userMapper;
     }
 
-    public User register(User user) {
-        return userRepository.save(user);
-    }
-
     public boolean exists(String username) {
         return userRepository.existsByUsername(username);
     }
@@ -35,7 +31,6 @@ public class UserService {
         if (exists(authRequest.getUsername())) {
             throw new UserValidationException("Пользователь с таким именем уже существует");
         }
-
         User user = userMapper.toEntity(authRequest);
         return userRepository.save(user);
     }
