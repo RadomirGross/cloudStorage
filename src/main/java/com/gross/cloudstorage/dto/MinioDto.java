@@ -15,7 +15,7 @@ public class MinioDto {
     private final String name;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private final Long  size;
+    private final Long size;
     private final ObjectType type;
 
     public enum ObjectType {

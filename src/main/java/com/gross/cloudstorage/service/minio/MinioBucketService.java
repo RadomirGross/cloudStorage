@@ -22,7 +22,8 @@ public class MinioBucketService {
     private MinioBucketService(MinioClientHelper minioClientHelper, @Value("${minio.bucket-name}") String bucketName) {
         this.minioClientHelper = minioClientHelper;
         this.bucketName = bucketName;
-        this.logger = LoggerFactory.getLogger(this.getClass());}
+        this.logger = LoggerFactory.getLogger(this.getClass());
+    }
 
     private void createBucket(String bucketName) {
         try {

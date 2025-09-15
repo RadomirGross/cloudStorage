@@ -76,18 +76,18 @@ public class MinioValidationService {
 
     public void validateNoNameConflicts(String bucketName, String path, String fileName) {
 
-            Iterable<Result<Item>> listObjects = minioClientHelper.getListObjects(bucketName, path, false);
-            List<Item> filtered = findAndDeleteDirectoryEmptyFile(listObjects, path);
-            for (Item item : filtered) {
-                if (PathUtils.extractName(item.objectName()).equals(fileName + "/")) {
-                    logger.info("По пути: {} уже есть директория с именем {}. Для избежания конфликта имён не используйте для имя файла," +
-                                    " совпадающее с именем директории по этому пути. Рекомендуем добавить расширение для файла.", path + "/" + fileName,
-                            PathUtils.extractName(item.objectName()));
-                    throw new ConflictingNameException(
-                            String.format("Конфликт имен: файл '%s' нельзя создать, так как уже существует папка '%s'. " +
-                                    "Используйте другое имя или добавьте расширение файла.", fileName, PathUtils.extractName(item.objectName())));
-                }
+        Iterable<Result<Item>> listObjects = minioClientHelper.getListObjects(bucketName, path, false);
+        List<Item> filtered = findAndDeleteDirectoryEmptyFile(listObjects, path);
+        for (Item item : filtered) {
+            if (PathUtils.extractName(item.objectName()).equals(fileName + "/")) {
+                logger.info("По пути: {} уже есть директория с именем {}. Для избежания конфликта имён не используйте для имя файла," +
+                                " совпадающее с именем директории по этому пути. Рекомендуем добавить расширение для файла.", path + "/" + fileName,
+                        PathUtils.extractName(item.objectName()));
+                throw new ConflictingNameException(
+                        String.format("Конфликт имен: файл '%s' нельзя создать, так как уже существует папка '%s'. " +
+                                "Используйте другое имя или добавьте расширение файла.", fileName, PathUtils.extractName(item.objectName())));
             }
+        }
     }
 
     public List<Item> findAndDeleteDirectoryEmptyFile(Iterable<Result<Item>> folder, String path) {

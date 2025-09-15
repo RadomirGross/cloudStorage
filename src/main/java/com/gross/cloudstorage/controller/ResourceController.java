@@ -1,6 +1,8 @@
 package com.gross.cloudstorage.controller;
 
-import com.gross.cloudstorage.exception.*;
+import com.gross.cloudstorage.exception.MinioServiceException;
+import com.gross.cloudstorage.exception.ResourceNotFoundException;
+import com.gross.cloudstorage.exception.ResourcePathValidationException;
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.CloudStorageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,18 +50,8 @@ public class ResourceController {
                                             Authentication authentication, HttpServletRequest request) {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        try {
-            Long contentLength = (Long) request.getAttribute("contentLength");
-            return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects, contentLength));
-        } catch (ResourceAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
-        } catch (ResourcePathValidationException | ConflictingNameException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-        } catch (MinioServiceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Ошибка при загрузке в облачное хранилище. " + e.getMessage()));
-        } catch (StorageQuotaExceededException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
-        }
+        Long contentLength = (Long) request.getAttribute("contentLength");
+        return ResponseEntity.status(HttpStatus.CREATED).body(cloudStorageService.uploadResource(userDetails.getId(), path, objects, contentLength));
     }
 
     @Operation(summary = "Удалить ресурс")
@@ -67,16 +59,8 @@ public class ResourceController {
     public ResponseEntity<?> deleteResource(@RequestParam(required = false) String path,
                                             Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        try {
-            cloudStorageService.deleteResource(userDetails.getId(), path);
-            return ResponseEntity.noContent().build();
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при удалении ресурса. " + e.getMessage()));
-        } catch (ResourcePathValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Ошибка при удалении ресурса. " + e.getMessage()));
-        } catch (MinioServiceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Ошибка при удалении ресурса. " + e.getMessage()));
-        }
+        cloudStorageService.deleteResource(userDetails.getId(), path);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Переместить ресурс")
@@ -85,16 +69,6 @@ public class ResourceController {
                                           @RequestParam(required = false) String to,
                                           Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        try {
-            return ResponseEntity.ok().body(cloudStorageService.moveResource(userDetails.getId(), from, to));
-        } catch (PathValidationException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
-        } catch (ResourceAlreadyExistsException | ResourceConflictException | ConflictingNameException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
-        } catch (MinioServiceException e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.ok().body(cloudStorageService.moveResource(userDetails.getId(), from, to));
     }
 }

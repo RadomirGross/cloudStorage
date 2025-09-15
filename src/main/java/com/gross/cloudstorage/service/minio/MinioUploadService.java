@@ -57,10 +57,10 @@ public class MinioUploadService {
 
             if (!minioClientHelper.resourceExists(bucketName, fullPath + fileName, false)) {
                 minioValidationService.validateParentFoldersExist(fullPath + fileName, true);
-                minioValidationService.validateNoNameConflicts(bucketName,fullPath,fileName);
+                minioValidationService.validateNoNameConflicts(bucketName, fullPath, fileName);
                 minioClientHelper.uploadFile(bucketName, fullPath, object);
-                logger.info("Успешно загружен файл: {}, размером: {} байт", fullPath+fileName, object.getSize());
-                return MinioMapper.toDto(fullPath+fileName, object.getSize(), userId);
+                logger.info("Успешно загружен файл: {}, размером: {} байт", fullPath + fileName, object.getSize());
+                return MinioMapper.toDto(fullPath + fileName, object.getSize(), userId);
             } else throw new ResourceAlreadyExistsException("Файл с таким именем уже существует");
         } catch (IOException | NoSuchAlgorithmException | InvalidKeyException | MinioException e) {
             logger.error("Ошибка при загрузке ресурса на сервер ", e);
@@ -69,7 +69,7 @@ public class MinioUploadService {
     }
 
     public List<MinioDto> uploadResource(long userId, String path,
-                                         List<MultipartFile> objects, long contentLength)  {
+                                         List<MultipartFile> objects, long contentLength) {
 
         try {
             List<MinioDto> uploaded = new ArrayList<>();
@@ -78,7 +78,7 @@ public class MinioUploadService {
             }
             return uploaded;
         } finally {
-            storageProtectionService.removeReservedSpace(contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+            storageProtectionService.removeReservedSpace(contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
         }
     }
 

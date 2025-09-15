@@ -24,6 +24,8 @@ springdoc.api-docs.path=/v3/api-docs
 springdoc.swagger-ui.path=/swagger-ui.html
 springdoc.swagger-ui.operationsSorter=method
 
-spring.servlet.multipart.max-file-size=2GB
-spring.servlet.multipart.max-request-size=2GB
-storage.reserved-bytes=5000000000
+spring.servlet.multipart.max-file-size=5GB
+spring.servlet.multipart.max-request-size=10GB
+storage.reserved-bytes=10000000000
+
+web.interceptor.excluded-paths=/api,/static,/favicon.ico,/config.js,/v3/api-docs,/swagger-ui,/swagger-resources

@@ -8,11 +8,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-private final ReactRouterInterceptor reactRouterInterceptor;
+    private final ReactRouterInterceptor reactRouterInterceptor;
 
-public WebConfig(ReactRouterInterceptor reactRouterInterceptor) {
-    this.reactRouterInterceptor = reactRouterInterceptor;
-}
+    public WebConfig(ReactRouterInterceptor reactRouterInterceptor) {
+        this.reactRouterInterceptor = reactRouterInterceptor;
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

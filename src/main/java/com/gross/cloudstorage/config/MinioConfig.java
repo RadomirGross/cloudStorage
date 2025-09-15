@@ -22,7 +22,7 @@ public class MinioConfig {
         return MinioClient
                 .builder()
                 .endpoint(url)
-                .credentials(accessKey,secretKey)
+                .credentials(accessKey, secretKey)
                 .build();
     }
 

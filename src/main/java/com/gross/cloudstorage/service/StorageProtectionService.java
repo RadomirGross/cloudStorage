@@ -32,12 +32,12 @@ public class StorageProtectionService {
 
     public void addReservedSpace(long size) {
         reservedSpace.addAndGet(size);
-        logger.info("Добавлено резервное место на {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB" , size, reservedSpace.get(),availableSpace()/1024/1024);
+        logger.info("Добавлено резервное место на {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB", size, reservedSpace.get(), availableSpace() / 1024 / 1024);
     }
 
     public void removeReservedSpace(long size) {
         reservedSpace.addAndGet(-size);
-        logger.info("Удалено резервное место на {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB", size, reservedSpace.get(),availableSpace()/1024/1024);
+        logger.info("Удалено резервное место на {} bytes. Всего зарезервировано: {} bytes. Всего доступно на сервере: {} MB", size, reservedSpace.get(), availableSpace() / 1024 / 1024);
     }
 
     public boolean hasEnoughSpace(long objectSize) {
@@ -50,7 +50,7 @@ public class StorageProtectionService {
         if (!hasEnoughSpace(objectSize)) {
             throw new StorageQuotaExceededException(
                     String.format("Недостаточно места: требуется %d МБ, доступно %d МБ (резерв %d МБ).",
-                            objectSize/1024/1024, (availableSpace()-reservedSpace.get())/1024/1024, reservedSpace.get()/1024/1024)
+                            objectSize / 1024 / 1024, (availableSpace() - reservedSpace.get()) / 1024 / 1024, reservedSpace.get() / 1024 / 1024)
             );
         }
     }

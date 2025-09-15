@@ -2,10 +2,9 @@ package com.gross.cloudstorage.service;
 
 import com.gross.cloudstorage.dto.AuthRequestDto;
 import com.gross.cloudstorage.exception.UserValidationException;
+import com.gross.cloudstorage.mapper.UserMapper;
 import com.gross.cloudstorage.model.User;
 import com.gross.cloudstorage.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -13,9 +12,11 @@ import java.util.Optional;
 @Component
 public class UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     public User register(User user) {
@@ -30,40 +31,17 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    public User createUser(AuthRequestDto authRequest, PasswordEncoder passwordEncoder) {
-        User user = new User();
-        user.setUsername(authRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(authRequest.getPassword()));
-        return user;
+    public User create(AuthRequestDto authRequest) {
+        if (exists(authRequest.getUsername())) {
+            throw new UserValidationException("Пользователь с таким именем уже существует");
+        }
+
+        User user = userMapper.toEntity(authRequest);
+        return userRepository.save(user);
     }
 
     public void deleteUser(User user) {
-       userRepository.delete(user);
-    }
-
-
-    public void validateUser(String username,String password) {
-
-
-        if (username == null || username.trim().isEmpty()) {
-            throw new UserValidationException("Имя пользователя не может быть пустым");
-        }
-        if (username.length() < 5) {
-            throw new UserValidationException("Длинна имени пользователя не должна быть менее 5 символов");
-        }
-        if (username.length() > 20) {
-            throw new UserValidationException("Длинна имени пользователя не должна быть более 20 символов");
-        }
-        if (password == null || password.trim().isEmpty()) {
-            throw new UserValidationException("Пароль не может быть пустым");
-        }
-        if (password.length() < 5) {
-            throw new UserValidationException("Длинна пароля пользователя не должна быть менее 5 символов");
-        }
-        if (password.length() > 20) {
-            throw new UserValidationException("Длинна пароля пользователя не должна быть более 20 символов");
-        }
-
+        userRepository.delete(user);
     }
 
 

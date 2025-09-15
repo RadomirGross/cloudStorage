@@ -1,6 +1,5 @@
 package com.gross.cloudstorage.controller;
 
-import com.gross.cloudstorage.exception.*;
 import com.gross.cloudstorage.security.CustomUserDetails;
 import com.gross.cloudstorage.service.CloudStorageService;
 import com.gross.cloudstorage.utils.PathUtils;
@@ -8,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.InputStream;
-import java.util.Map;
 
 @RestController
 @RequestMapping("api/resource/download")
@@ -38,17 +35,9 @@ public class DownloadController {
         boolean isDirectory = path.endsWith("/");
         String name = PathUtils.extractName(path);
         InputStream inputStream = cloudStorageService.downloadResource(userDetails.getId(), path);
-        try {
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + (isDirectory ? name + ".zip" : name) + "\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(new InputStreamResource(inputStream));
-        } catch (PathValidationException  e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
-        } catch (MinioServiceException e) {
-            return ResponseEntity.internalServerError().body(Map.of("message", "Ошибка при скачивании. " + e.getMessage()));
-        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + (isDirectory ? name + ".zip" : name) + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(inputStream));
     }
 }

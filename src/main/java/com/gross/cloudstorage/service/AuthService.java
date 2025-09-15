@@ -3,8 +3,8 @@ package com.gross.cloudstorage.service;
 import com.gross.cloudstorage.dto.AuthRequestDto;
 import com.gross.cloudstorage.exception.LogoutException;
 import com.gross.cloudstorage.exception.MinioServiceException;
-import com.gross.cloudstorage.exception.UserAlreadyExistsException;
 import com.gross.cloudstorage.exception.UserIsNotAuthenticatedException;
+import com.gross.cloudstorage.mapper.UserMapper;
 import com.gross.cloudstorage.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,31 +24,28 @@ public class AuthService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private  final SecurityContextRepository securityContextRepository;
+    private final SecurityContextRepository securityContextRepository;
     private final CloudStorageService cloudStorageService;
+    private final UserMapper userMapper;
 
     public AuthService(UserService userService, PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        SecurityContextRepository securityContextRepository,
-                       CloudStorageService cloudStorageService) {
+                       CloudStorageService cloudStorageService, UserMapper userMapper) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.cloudStorageService = cloudStorageService;
+        this.userMapper = userMapper;
     }
 
     public String register(AuthRequestDto authRequestDto, HttpServletRequest httpRequest) {
-        if (userService.exists(authRequestDto.getUsername())) {
-            throw new UserAlreadyExistsException("Пользователь с именем " + authRequestDto.getUsername() + " уже существует. Выберите другое имя.");
-        }
 
-        userService.validateUser(authRequestDto.getUsername(), authRequestDto.getPassword());
-        User user = userService.createUser(authRequestDto, passwordEncoder);
-        userService.register(user);
+        User user = userService.create(authRequestDto);
 
         try {
-            cloudStorageService.createDirectory(user.getId(),"",true);
+            cloudStorageService.createDirectory(user.getId(), "", true);
         } catch (MinioServiceException e) {
             userService.deleteUser(user);
             throw e;
@@ -57,7 +54,6 @@ public class AuthService {
     }
 
     public String authenticate(AuthRequestDto authRequestDto, HttpServletRequest httpRequest) {
-        userService.validateUser(authRequestDto.getUsername(), authRequestDto.getPassword());
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(authRequestDto.getUsername(), authRequestDto.getPassword());
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
@@ -65,9 +61,7 @@ public class AuthService {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
-
         securityContextRepository.saveContext(context, httpRequest, null);
-
         return authRequestDto.getUsername();
 
     }

@@ -55,7 +55,7 @@ public class MinioMapper {
                 MinioDto.ObjectType.DIRECTORY : MinioDto.ObjectType.FILE;
 
         return new MinioDto(
-                PathUtils.stripUserPrefix(userId,path),
+                PathUtils.stripUserPrefix(userId, path),
                 name,
                 isDirectory ? null : size,
                 objectType

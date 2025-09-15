@@ -1,7 +1,10 @@
 package com.gross.cloudstorage.service;
 
 import com.gross.cloudstorage.dto.MinioDto;
-import com.gross.cloudstorage.service.minio.*;
+import com.gross.cloudstorage.service.minio.MinioDirectoryService;
+import com.gross.cloudstorage.service.minio.MinioDownloadService;
+import com.gross.cloudstorage.service.minio.MinioResourceService;
+import com.gross.cloudstorage.service.minio.MinioUploadService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,35 +28,35 @@ public class CloudStorageService {
         this.minioResourceService = minioResourceService;
     }
 
-    public List<MinioDto> getUserDirectory(long userId, String path){
+    public List<MinioDto> getUserDirectory(long userId, String path) {
         return minioDirectoryService.getUserDirectory(userId, path);
     }
 
-    public MinioDto createDirectory(long userId, String path,boolean isRootDirectory){
-        return minioDirectoryService.createDirectory(userId,path,isRootDirectory);
+    public MinioDto createDirectory(long userId, String path, boolean isRootDirectory) {
+        return minioDirectoryService.createDirectory(userId, path, isRootDirectory);
     }
 
-    public InputStream downloadResource(long userId, String path){
+    public InputStream downloadResource(long userId, String path) {
         return minioDownloadService.downloadResource(userId, path);
     }
 
-    public MinioDto getResourceInformation(long userId, String path){
+    public MinioDto getResourceInformation(long userId, String path) {
         return minioResourceService.getResourceInformation(userId, path);
     }
 
-    public List<MinioDto> uploadResource(long userId, String path, List<MultipartFile> objects,long contentLength){
-        return minioUploadService.uploadResource(userId, path, objects,contentLength);
+    public List<MinioDto> uploadResource(long userId, String path, List<MultipartFile> objects, long contentLength) {
+        return minioUploadService.uploadResource(userId, path, objects, contentLength);
     }
 
-    public void deleteResource(long userId, String path){
+    public void deleteResource(long userId, String path) {
         minioResourceService.deleteResource(userId, path);
     }
 
-    public MinioDto moveResource(long userId, String from, String to){
+    public MinioDto moveResource(long userId, String from, String to) {
         return minioResourceService.moveResource(userId, from, to);
     }
 
-    public List<MinioDto> searchResources(long userId, String query){
+    public List<MinioDto> searchResources(long userId, String query) {
         return minioResourceService.searchResources(userId, query);
     }
 }

@@ -28,12 +28,13 @@ public class MinioDirectoryService {
     private final Logger logger;
 
     private MinioDirectoryService(MinioClientHelper minioClientHelper,
-                                 MinioValidationService minioValidationService,
-                                 @Value("${minio.bucket-name}")String bucketName) {
+                                  MinioValidationService minioValidationService,
+                                  @Value("${minio.bucket-name}") String bucketName) {
         this.minioClientHelper = minioClientHelper;
         this.minioValidationService = minioValidationService;
         this.bucketName = bucketName;
-        this.logger = LoggerFactory.getLogger(this.getClass());}
+        this.logger = LoggerFactory.getLogger(this.getClass());
+    }
 
     public List<MinioDto> getUserDirectory(long userId, String path) {
         String fullPath = PathUtils.addUserPrefix(userId, path);
@@ -41,7 +42,8 @@ public class MinioDirectoryService {
         if (minioValidationService.isResourceExists(fullPath, true)) {
             return getDirectory(fullPath, userId);
         } else {
-            throw new ResourceNotFoundException("Директория по пути " + path + " не найдена");}
+            throw new ResourceNotFoundException("Директория по пути " + path + " не найдена");
+        }
     }
 
     public MinioDto createDirectory(long userId, String path, boolean isRootFolder) {

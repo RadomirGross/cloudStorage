@@ -25,7 +25,7 @@ public class EarlySizeCheckFilter implements Filter {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final int DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE = 2;
 
-    public EarlySizeCheckFilter(StorageProtectionService storageProtectionService,DataSize maxRequestSize) {
+    public EarlySizeCheckFilter(StorageProtectionService storageProtectionService, DataSize maxRequestSize) {
         this.storageProtectionService = storageProtectionService;
         this.maxRequestSize = maxRequestSize;
     }
@@ -59,25 +59,25 @@ public class EarlySizeCheckFilter implements Filter {
         if (contentLength > 0) {
             boolean reserved = false;
             try {
-                storageProtectionService.assertEnoughSpace(contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
-                storageProtectionService.addReservedSpace(contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+                storageProtectionService.assertEnoughSpace(contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+                storageProtectionService.addReservedSpace(contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
                 reserved = true;
-                logger.info("Фильтр. Зарезервировано {} байт для загрузки", contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+                logger.info("Фильтр. Зарезервировано {} байт для загрузки", contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
             } catch (Exception e) {
                 if (reserved) {
-                    storageProtectionService.removeReservedSpace(contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
-                    logger.info("Фильтр.Освобожден резерв {} байт из-за ошибки при резервировании", contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+                    storageProtectionService.removeReservedSpace(contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+                    logger.info("Фильтр.Освобожден резерв {} байт из-за ошибки при резервировании", contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
                 }
                 return;
             }
         }
 
         try {
-            request.setAttribute("contentLength",contentLength);
+            request.setAttribute("contentLength", contentLength);
             chain.doFilter(httpRequest, httpResponse);
         } catch (Exception e) {
             if (contentLength > 0) {
-                storageProtectionService.removeReservedSpace(contentLength*DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
+                storageProtectionService.removeReservedSpace(contentLength * DISK_USAGE_MULTIPLIER_TMP_AND_STORAGE);
                 logger.info("Фильтр. Освобожден резерв {} байт из-за ошибки в цепочке фильтров", contentLength);
             }
             throw e;

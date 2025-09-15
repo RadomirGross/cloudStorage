@@ -1,10 +1,11 @@
 package com.gross.cloudstorage.service.minio;
 
-import com.gross.cloudstorage.exception.*;
+import com.gross.cloudstorage.exception.MinioServiceException;
+import com.gross.cloudstorage.exception.ResourceNotFoundException;
 import com.gross.cloudstorage.minio.MinioClientHelper;
 import com.gross.cloudstorage.utils.PathUtils;
 import io.minio.Result;
-import io.minio.errors.*;
+import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,16 +34,17 @@ public class MinioDownloadService {
 
     public InputStream downloadResource(long userId, String path) {
         String fullPath = PathUtils.addUserPrefix(userId, path);
-        boolean isDirectory=path.endsWith("/");
+        boolean isDirectory = path.endsWith("/");
         PathUtils.validatePath(fullPath, isDirectory);
 
-        if(minioValidationService.isResourceExists(path,isDirectory))
-        {throw new ResourceNotFoundException("По пути -"+PathUtils.stripUserPrefix(userId, path)+"не найден"+
-                (isDirectory?"а директория":"файл")+"для скачивания");}
+        if (minioValidationService.isResourceExists(path, isDirectory)) {
+            throw new ResourceNotFoundException("По пути -" + PathUtils.stripUserPrefix(userId, path) + "не найден" +
+                    (isDirectory ? "а директория" : "файл") + "для скачивания");
+        }
 
-        if(isDirectory){
+        if (isDirectory) {
             return downloadDirectory(fullPath);
-        }else return downloadFile(fullPath);
+        } else return downloadFile(fullPath);
     }
 
     private InputStream downloadFile(String path) {
